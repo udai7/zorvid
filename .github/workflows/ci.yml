@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: vp
+          POSTGRES_PASSWORD: secret
+          POSTGRES_DB: video_processing
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U vp"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+
+    env:
+      DATABASE_URL: postgres://vp:secret@localhost:5432/video_processing
+      REDIS_URL: redis://localhost:6379
+      MINIO_ENDPOINT: localhost
+      MINIO_PORT: "9000"
+      MINIO_USE_SSL: "false"
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+      BUCKET_INPUTS: inputs
+      BUCKET_OUTPUTS: outputs
+      BUCKET_THUMBS: thumbnails
+      JWT_SECRET: ci-test-secret-please-ignore
+      SIGNED_URL_TTL: "3600"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Start MinIO (needs a server command, so not a service container)
+        run: |
+          docker run -d --name minio -p 9000:9000 \
+            -e MINIO_ROOT_USER=minioadmin -e MINIO_ROOT_PASSWORD=minioadmin \
+            quay.io/minio/minio server /data
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:9000/minio/health/live && break
+            sleep 1
+          done
+
+      - name: Install backend deps
+        run: npm ci
+
+      - name: Build (shared + api + worker)
+        run: npm run build
+
+      - name: Run migrations
+        run: npm run migrate --workspace @vp/api
+
+      - name: API tests
+        run: npm run test --workspace @vp/api
+
+      - name: Build web (typecheck + Vite build)
+        working-directory: packages/web
+        run: |
+          npm install
+          npm run build

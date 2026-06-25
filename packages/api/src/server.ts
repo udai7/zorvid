@@ -1,4 +1,4 @@
-import Fastify from "fastify";
+import Fastify, { type FastifyInstance } from "fastify";
 import fastifyMultipart from "@fastify/multipart";
 import { registerAuth } from "./auth/jwt.js";
 import { authRoutes } from "./routes/auth.js";
@@ -8,8 +8,12 @@ import { ensureBuckets } from "./storage/s3.js";
 
 const port = Number(process.env.API_PORT ?? 3000);
 
-async function main() {
-  const app = Fastify({ logger: true });
+/**
+ * Build the fully-wired Fastify app without listening. Exported so tests can
+ * drive it via `app.inject(...)`; `start()` adds the network listener.
+ */
+export async function buildApp(opts: { logger?: boolean } = {}): Promise<FastifyInstance> {
+  const app = Fastify({ logger: opts.logger ?? true });
 
   // JWT plugin + `authenticate` preHandler (awaited so routes inherit them).
   await registerAuth(app);
@@ -35,10 +39,18 @@ async function main() {
   await app.register(videoRoutes, { prefix: "/api/videos" });
   await app.register(streamRoutes, { prefix: "/api/videos" });
 
+  return app;
+}
+
+async function start() {
+  const app = await buildApp();
   await app.listen({ port, host: "0.0.0.0" });
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+// Only auto-start when run directly (not when imported by tests).
+if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+  start().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}

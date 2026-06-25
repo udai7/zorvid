@@ -51,6 +51,10 @@ Create tables (see `architecture.md` §6):
   master_playlist_key, created_at)
 - `jobs` (id, video_id fk, progress, stage, logs, error_message, attempts, updated_at)
 
+Migrations run automatically in Docker via a one-shot `migrate` service (compiled
+`dist/db/migrate.js`, with `.sql` copied into `dist` at build time) before the API starts.
+Locally: `npm run migrate --workspace @vp/api`.
+
 **Verify:** run migrations; `\dt` shows all three tables with correct columns.
 
 ---
@@ -110,33 +114,47 @@ thumbnails exist in MinIO. A corrupt file ends `failed` with a readable error.
 ## Step 6: API — streaming
 
 In `packages/api/src/routes/streams.ts`:
-- `GET /api/videos/:id/stream` — return the master playlist URL.
-  - **Public** videos → public path through nginx/CDN.
-  - **Private** videos → **signed, time-limited URL** (presigned MinIO or short-lived token).
-- nginx routes `/streams/*` to MinIO `outputs/` so segments are served (and CDN-cacheable).
+- `GET /api/videos/:id/stream` — return the playback URL (`/api/videos/:id/hls/master.m3u8`),
+  plus a short-lived token for private videos.
+- `GET /api/videos/:id/hls/*` — proxy HLS objects from the **private** outputs bucket.
+  - **Public** videos → served anonymously, `Cache-Control: public, immutable` (nginx/CDN cache it).
+  - **Private** videos → require a short-lived per-stream token (TTL = `SIGNED_URL_TTL`), `no-store`.
+- `PATCH /api/videos/:id` sets visibility (`public` | `private`).
 
-**Verify:** hls.js plays a completed video with adaptive quality switching; a private URL
-expires after its TTL; a public video plays without a token.
+> Why proxy instead of presigned URLs: hls.js resolves child playlists/segments with *relative*
+> URLs, dropping any query-string signature — so presigning only loads the master. A token
+> re-applied per request (hls.js `xhrSetup`) works for nested HLS and keeps private truly private.
+
+**Verify:** hls.js plays a completed video with adaptive quality switching; a private stream
+returns 401 without the token and expires after its TTL; a public video plays without a token.
 
 ---
 
-## Step 7: Dashboard (`static/`)
+## Step 7: Dashboard (`packages/web/` — React + Vite SPA)
 
-- **`index.html`** — drag-and-drop dropzone, progress cards, an inspect/detail view with player.
-- **`styles.css`** — responsive styling (CSS variables, progress bars).
-- **`app.js`** — handles drag-drop, calls the upload API, polls `GET /api/videos/:id` every ~1s
-  to update cards/logs, and embeds an **hls.js** player for completed videos.
+- **Auth** — register/login, JWT in `localStorage` (`Login.tsx`, `api.ts`).
+- **`Dropzone.tsx`** — drag-and-drop upload with live upload progress (XHR).
+- **`VideoCard.tsx` + `useVideos.ts`** — poll `GET /api/videos` every ~1s; show status,
+  progress, stage, errors; toggle visibility; delete.
+- **`Player.tsx`** — hls.js modal with adaptive playback + manual quality chips; attaches the
+  private stream token via `xhrSetup`.
 
-**Verify:** full browser flow — drop a file, watch progress to 100%, play the result inline.
+Built and served by nginx (`packages/web/Dockerfile`); in dev, Vite proxies `/api` → the API.
+
+**Verify:** full browser flow — drop a file, watch progress to 100%, play the result inline
+with quality switching.
 
 ---
 
 ## Step 8: CDN (Cloudflare)
 
 - Point the domain at the VPS through Cloudflare (free tier), proxied.
-- Cache-control on `/streams/*` so `.ts`/`.m3u8` segments are edge-cached.
+- nginx caches public HLS responses (`/api/videos/:id/hls/*` with `Cache-Control: public`);
+  add a Cloudflare Cache Rule for that path so `.ts`/`.m3u8` are edge-cached (these extensions
+  aren't cached by default).
 
-**Verify:** repeated segment requests return `cf-cache-status: HIT`.
+**Verify:** repeated segment requests return `X-Cache-Status: HIT` (nginx) / `cf-cache-status: HIT`
+(Cloudflare). Private responses (`no-store`) are never cached.
 
 > Note: Cloudflare's free plan restricts heavy video caching (ToS 2.8) — fine at hobby scale.
 > Growth path: **Cloudflare R2 + CDN** (config-only swap, since MinIO is S3-compatible).
