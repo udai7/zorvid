@@ -1,0 +1,20 @@
+{
+  "name": "video-processing",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Self-hosted scalable VOD pipeline (upload -> transcode -> adaptive HLS streaming)",
+  "workspaces": [
+    "packages/shared",
+    "packages/api",
+    "packages/worker"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "dev:api": "npm run dev --workspace @vp/api",
+    "dev:worker": "npm run dev --workspace @vp/worker",
+    "migrate": "npm run migrate --workspace @vp/api"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
