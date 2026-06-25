@@ -61,8 +61,6 @@ services:
       mc mb -p local/$${BUCKET_INPUTS} &&
       mc mb -p local/$${BUCKET_OUTPUTS} &&
       mc mb -p local/$${BUCKET_THUMBS} &&
-      mc anonymous set download local/$${BUCKET_OUTPUTS} &&
-      mc anonymous set download local/$${BUCKET_THUMBS} &&
       echo 'buckets ready';
       "
     environment:

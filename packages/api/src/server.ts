@@ -3,6 +3,7 @@ import fastifyMultipart from "@fastify/multipart";
 import { registerAuth } from "./auth/jwt.js";
 import { authRoutes } from "./routes/auth.js";
 import { videoRoutes } from "./routes/videos.js";
+import { streamRoutes } from "./routes/streams.js";
 import { ensureBuckets } from "./storage/s3.js";
 
 const port = Number(process.env.API_PORT ?? 3000);
@@ -32,6 +33,7 @@ async function main() {
   app.get("/health", async () => ({ status: "ok" }));
   await app.register(authRoutes, { prefix: "/api/auth" });
   await app.register(videoRoutes, { prefix: "/api/videos" });
+  await app.register(streamRoutes, { prefix: "/api/videos" });
 
   await app.listen({ port, host: "0.0.0.0" });
 }

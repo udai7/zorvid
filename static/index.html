@@ -2,11 +2,49 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Video Pipeline</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js"></script>
   </head>
   <body>
-    <!-- Dashboard is implemented in Step 7. -->
-    <h1>Video Processing Pipeline</h1>
-    <p>Dashboard coming in Step 7.</p>
+    <header>
+      <h1>Video Processing Pipeline</h1>
+      <div id="auth-status" class="auth-status"></div>
+    </header>
+
+    <!-- Auth: simple email/password; token kept in localStorage. -->
+    <section id="auth" class="card auth">
+      <form id="auth-form">
+        <input id="email" type="email" placeholder="email" autocomplete="username" required />
+        <input id="password" type="password" placeholder="password (min 8 chars)"
+               autocomplete="current-password" minlength="8" required />
+        <button type="submit" data-action="login">Log in</button>
+        <button type="submit" data-action="register">Register</button>
+      </form>
+      <p id="auth-error" class="error"></p>
+    </section>
+
+    <!-- App (shown once authenticated) -->
+    <main id="app" hidden>
+      <section id="dropzone" class="dropzone">
+        <p>Drag &amp; drop a video here, or click to choose a file.</p>
+        <input id="file-input" type="file" accept="video/*" hidden />
+      </section>
+
+      <section id="cards" class="cards"></section>
+    </main>
+
+    <!-- Player modal -->
+    <div id="player-modal" class="modal" hidden>
+      <div class="modal-body">
+        <button id="player-close" class="close">×</button>
+        <h2 id="player-title"></h2>
+        <video id="player" controls playsinline></video>
+        <pre id="player-meta" class="meta"></pre>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
   </body>
 </html>

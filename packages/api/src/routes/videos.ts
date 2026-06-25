@@ -67,6 +67,21 @@ export async function videoRoutes(app: FastifyInstance) {
     return rows[0];
   });
 
+  // PATCH /api/videos/:id — set visibility (public | private).
+  app.patch("/:id", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const { visibility } = (req.body ?? {}) as { visibility?: string };
+    if (visibility !== "public" && visibility !== "private")
+      return reply.code(400).send({ error: "visibility must be 'public' or 'private'" });
+
+    const { rowCount } = await pool.query(
+      "UPDATE videos SET visibility = $1 WHERE id = $2 AND user_id = $3",
+      [visibility, id, req.user.id]
+    );
+    if (!rowCount) return reply.code(404).send({ error: "not found" });
+    return { id, visibility };
+  });
+
   // DELETE /api/videos/:id — remove DB rows (jobs cascade) + all stored objects.
   app.delete("/:id", async (req, reply) => {
     const { id } = req.params as { id: string };
