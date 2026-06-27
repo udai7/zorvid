@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useReveal } from "../hooks/useReveal";
 import { btn, cn } from "../lib/ui";
 import gsap from "gsap";
+import ArchitectureDiagram from "./ArchitectureDiagram";
 
 interface Props {
   onSignIn: () => void;
@@ -15,14 +16,6 @@ const FEATURES = [
   { title: "Adaptive HLS", body: "Streams that switch quality to fit each viewer's bandwidth.", pill: null },
   { title: "Private by default", body: "Token-proxied delivery; flip a video public when you're ready.", pill: null },
   { title: "Self-hosted", body: "Own the whole stack — one docker compose up and you're live.", pill: "Open Source" },
-];
-
-const PIPELINE = [
-  { ico: "⬆️", lbl: "Upload" },
-  { ico: "🔍", lbl: "Analyze" },
-  { ico: "🎞️", lbl: "Transcode" },
-  { ico: "📦", lbl: "Package" },
-  { ico: "📡", lbl: "Stream" },
 ];
 
 const IconFFmpeg = () => (
@@ -368,25 +361,28 @@ export function Landing({ onSignIn }: Props) {
           ))}
         </section>
 
-        {/* How it works / pipeline preview */}
-        <section id="how" className="border-b border-line bg-subtle px-6 py-14">
-          <div data-reveal className="mb-8 text-center">
-            <span className="font-mono text-xs uppercase tracking-[0.08em] text-muted">[ HOW IT WORKS ]</span>
-            <h2 className="mt-3 text-[clamp(1.5rem,3vw,2rem)] font-semibold tracking-[-0.02em]">From raw file to adaptive stream</h2>
-            <p className="mt-2 text-muted">Every upload flows through an async, observable transcoding pipeline.</p>
-          </div>
-          <div data-reveal className="mx-auto grid max-w-[760px] grid-cols-2 overflow-hidden rounded-[10px] border border-line bg-white sm:grid-cols-5">
-            {PIPELINE.map((s, i) => (
-              <div key={s.lbl} className={cn("p-4 text-center text-sm", i > 0 && "border-line sm:border-l", i % 2 === 1 && "border-l", i >= 2 && "border-t sm:border-t-0")}>
-                <span className="mb-1 block text-[1.3rem]">{s.ico}</span>
-                <span className="font-medium">{s.lbl}</span>
+        {/* Architecture Heading */}
+        <section className="border-b border-line bg-white">
+          <div className="mx-auto max-w-[1280px]">
+            <div className="pt-20 pb-12 px-6 grid gap-6 md:grid-cols-2 md:items-end">
+              <div>
+                <span className="font-mono text-xs uppercase tracking-[0.08em] text-muted">[ SYSTEM ARCHITECTURE ]</span>
+                <h2 className="mt-3 text-[clamp(1.8rem,4vw,2.5rem)] font-semibold tracking-[-0.03em] leading-[1.1] text-ink">
+                  Decoupled VOD Pipeline
+                </h2>
               </div>
-            ))}
+              <p className="text-[0.98rem] text-muted md:max-w-[42ch]">
+                Built as a distributed, horizontally scalable system. Hover over any component to trace the flow from ingestion to HLS storage.
+              </p>
+            </div>
           </div>
-          <pre data-reveal className="mx-auto mt-5 max-w-[760px] overflow-x-auto rounded-[10px] bg-ink px-5 py-4 font-mono text-[0.84rem] text-neutral-200">
-            <span className="text-neutral-500"># clone, then bring the whole stack up</span>{"\n"}
-            <span className="text-sky-300">docker</span> compose up -d --build
-          </pre>
+        </section>
+
+        {/* How it works / pipeline preview */}
+        <section id="how" className="border-b border-line bg-subtle py-16">
+          <div className="mx-auto max-w-[1280px] px-6">
+            <ArchitectureDiagram />
+          </div>
         </section>
 
         {/* Tech Stack Grid */}
