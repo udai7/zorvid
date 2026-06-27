@@ -72,13 +72,37 @@ export function VideoCard({ video: v, onPlay, onToggleVisibility, onDelete }: Pr
 
       <div className="mt-auto flex flex-wrap gap-2 pt-1">
         {done && (
-          <motion.button whileTap={{ scale: 0.96 }} onClick={onPlay} className={cn(btn.primary, "px-3 py-1.5 text-[0.82rem]")}>
-            ▶ Play
+          <motion.button
+            whileTap={{ scale: 0.96 }}
+            onClick={onPlay}
+            className={cn(btn.primary, "flex items-center gap-1.5 px-3 py-1.5 text-[0.82rem]")}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+              <path d="M6.3 2.841A1.5 1.5 0 0 0 4 4.11v11.78a1.5 1.5 0 0 0 2.3 1.269l9.324-5.89a1.5 1.5 0 0 0 0-2.538L6.3 2.84Z" />
+            </svg>
+            Play
           </motion.button>
         )}
         {done && (
-          <button onClick={onToggleVisibility} className={cn(btn.secondary, "px-3 py-1.5 text-[0.82rem]")}>
-            {v.visibility === "public" ? "🌐 Public" : "🔒 Private"}
+          <button
+            onClick={onToggleVisibility}
+            className={cn(btn.secondary, "flex items-center gap-1.5 px-3 py-1.5 text-[0.82rem]")}
+          >
+            {v.visibility === "public" ? (
+              <>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-3.5 h-3.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-.778.099-1.533.284-2.253" />
+                </svg>
+                Public
+              </>
+            ) : (
+              <>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-3.5 h-3.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                </svg>
+                Private
+              </>
+            )}
           </button>
         )}
         <button onClick={onDelete} className={cn(btn.danger, "px-3 py-1.5 text-[0.82rem]")}>

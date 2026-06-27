@@ -1,13 +1,10 @@
 import { useRef, useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useReveal } from "../hooks/useReveal";
 import { btn, cn } from "../lib/ui";
 import gsap from "gsap";
 import ArchitectureDiagram from "./ArchitectureDiagram";
-
-interface Props {
-  onSignIn: () => void;
-}
 
 const REPO = "https://github.com/udai7/video_processing_pipeline";
 
@@ -170,9 +167,9 @@ function TechCell({ name, icon, usecase, i }: TechCellProps) {
           <span className="font-mono text-[0.65rem] text-muted group-hover:text-ink mt-2.5 tracking-wider uppercase font-semibold transition-colors duration-200">{name}</span>
         </div>
         {/* Slide 2: Back */}
-        <div className="h-1/2 w-full flex flex-col items-center justify-center px-4 text-center bg-ink border-t border-line">
-          <span className="text-[0.55rem] font-mono uppercase tracking-[0.1em] text-muted mb-1.5">{name}</span>
-          <span className="text-[0.75rem] text-neutral-200 font-medium leading-tight max-w-[20ch]">{usecase}</span>
+        <div className="h-1/2 w-full flex flex-col items-center justify-center px-4 text-center bg-neutral-800 border-t border-line">
+          <span className="text-[0.55rem] font-mono uppercase tracking-[0.1em] text-neutral-400 mb-1.5">{name}</span>
+          <span className="text-[0.75rem] text-white font-medium leading-tight max-w-[20ch]">{usecase}</span>
         </div>
       </div>
     </div>
@@ -181,8 +178,8 @@ function TechCell({ name, icon, usecase, i }: TechCellProps) {
 
 const FAQ_DATA = [
   {
-    question: "What is Video Pipeline?",
-    answer: "Video Pipeline is an open-source, self-hosted video-on-demand processing pipeline. It allows you to transcode, package, and serve adaptive streamable videos using your own storage and compute infrastructure."
+    question: "What is Vodeum?",
+    answer: "Vodeum is an open-source, self-hosted video-on-demand processing pipeline. It allows you to transcode, package, and serve adaptive streamable videos using your own storage and compute infrastructure."
   },
   {
     question: "How does self-hosting save costs?",
@@ -280,53 +277,27 @@ const fade = {
   show: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.55, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] as const } }),
 };
 
-export function Landing({ onSignIn }: Props) {
+export function Landing() {
   const reveal = useReveal<HTMLDivElement>();
 
   return (
-    <div ref={reveal} className="min-h-screen bg-paper text-ink">
-      {/* Nav */}
-      <header className="sticky top-0 z-10 border-b border-line bg-white/80 backdrop-blur">
-        <div className="mx-auto flex h-[60px] max-w-[1280px] items-center justify-between gap-4 px-6">
-          <div className="flex items-center gap-8">
-            <Brand />
-            <nav className="hidden gap-6 md:flex">
-              {[["Features", "#features"], ["How it works", "#how"], ["Docs", REPO]].map(([t, h]) => (
-                <a key={t} href={h} target={h.startsWith("http") ? "_blank" : undefined} rel="noreferrer" className="text-sm text-muted transition-colors hover:text-ink">
-                  {t}
-                </a>
-              ))}
-            </nav>
-          </div>
-          <div className="flex items-center gap-4">
-            <a href={REPO} target="_blank" rel="noreferrer" className="text-muted transition-colors hover:text-ink">
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.137 20.162 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
-              </svg>
-            </a>
-            <motion.button whileHover={{ y: -1 }} whileTap={{ scale: 0.97 }} onClick={onSignIn} className={btn.primary}>
-              Sign in
-            </motion.button>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-[1280px] border-x border-line">
+    <div ref={reveal}>
+      <main className="mx-auto w-full max-w-[1280px] border-x border-line">
         {/* Hero */}
         <section className="border-b border-line px-6 pb-14 pt-24">
           <motion.span variants={fade} initial="hidden" animate="show" className="block font-mono text-xs uppercase tracking-[0.08em] text-muted">
             [ <span className="text-brand">OPEN SOURCE</span> · SELF-HOSTED VIDEO ]
           </motion.span>
           <motion.h1 variants={fade} custom={1} initial="hidden" animate="show" className="mt-6 max-w-[24ch] text-[clamp(2.4rem,6.2vw,4.1rem)] font-[650] leading-[1.04] tracking-[-0.02em]">
-            The open-source video pipeline for developers.
+            The open-source Vodeum platform for developers.
           </motion.h1>
           <motion.p variants={fade} custom={2} initial="hidden" animate="show" className="mt-6 max-w-[85ch] text-[1.05rem] text-ink-2">
             Upload once and stream everywhere with self-hosted video transcoding and adaptive HLS.
           </motion.p>
           <motion.div variants={fade} custom={3} initial="hidden" animate="show" className="mt-8 flex flex-wrap gap-3">
-            <motion.button whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }} onClick={onSignIn} className={cn(btn.primary, "glare-effect")}>
+            <Link to="/register" className={cn(btn.primary, "glare-effect")}>
               Get started →
-            </motion.button>
+            </Link>
             <motion.a whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }} href={REPO} target="_blank" rel="noreferrer" className={cn(btn.secondary, "glare-effect")}>
               View on GitHub
             </motion.a>
@@ -366,9 +337,9 @@ export function Landing({ onSignIn }: Props) {
           <div className="mx-auto max-w-[1280px]">
             <div className="pt-20 pb-12 px-6 grid gap-6 md:grid-cols-2 md:items-end">
               <div>
-                <span className="font-mono text-xs uppercase tracking-[0.08em] text-muted">[ SYSTEM ARCHITECTURE ]</span>
+                <span className="font-mono text-xs uppercase tracking-[0.08em] text-muted">[ <span className="text-brand">SYSTEM</span> · <span className="text-ink">ARCHITECTURE</span> ]</span>
                 <h2 className="mt-3 text-[clamp(1.8rem,4vw,2.5rem)] font-semibold tracking-[-0.03em] leading-[1.1] text-ink">
-                  Decoupled VOD Pipeline
+                  Horizontally Scalable<br />Vodeum Processing Stack
                 </h2>
               </div>
               <p className="text-[0.98rem] text-muted md:max-w-[42ch]">
@@ -379,10 +350,8 @@ export function Landing({ onSignIn }: Props) {
         </section>
 
         {/* How it works / pipeline preview */}
-        <section id="how" className="border-b border-line bg-subtle py-16">
-          <div className="mx-auto max-w-[1280px] px-6">
-            <ArchitectureDiagram />
-          </div>
+        <section id="how" className="border-b border-line bg-subtle p-[7px]">
+          <ArchitectureDiagram />
         </section>
 
         {/* Tech Stack Grid */}
@@ -391,9 +360,9 @@ export function Landing({ onSignIn }: Props) {
             {/* Header: Split contents left and right */}
             <div className="pt-20 pb-12 px-6 grid gap-6 md:grid-cols-2 md:items-end">
               <div>
-                <span className="font-mono text-xs uppercase tracking-[0.08em] text-muted">[ POWERING THE PIPELINE ]</span>
+                <span className="font-mono text-xs uppercase tracking-[0.08em] text-muted">[ <span className="text-brand">POWERING</span> · <span className="text-ink">VODEUM</span> ]</span>
                 <h2 className="mt-3 text-[clamp(1.8rem,4vw,2.5rem)] font-semibold tracking-[-0.03em] leading-[1.1] text-ink">
-                  Our Open-Source Tech Stack
+                  High-Performance,<br />Video Engineering Stack
                 </h2>
               </div>
               <p className="text-[0.98rem] text-muted md:max-w-[42ch]">
@@ -422,7 +391,7 @@ export function Landing({ onSignIn }: Props) {
             {/* Header: Label, H2 on left, Paragraph/Details on right */}
             <div className="pt-20 pb-12 px-6 grid gap-6 md:grid-cols-2 md:items-end">
               <div>
-                <span className="font-mono text-xs uppercase tracking-[0.08em] text-muted">[ SCALABLE VIDEO INFRASTRUCTURE ]</span>
+                <span className="font-mono text-xs uppercase tracking-[0.08em] text-muted">[ <span className="text-brand">SCALABLE</span> · <span className="text-ink">VIDEO INFRASTRUCTURE</span> ]</span>
                 <h2 className="mt-3 text-[clamp(1.8rem,4vw,2.5rem)] font-semibold tracking-[-0.03em] leading-[1.1] text-ink">
                   Get the most out of your video workflows
                 </h2>
@@ -443,22 +412,36 @@ export function Landing({ onSignIn }: Props) {
                 className="flex flex-col md:border-r md:border-line border-b md:border-b-0"
               >
                 <div className="pt-[7px] px-[7px]">
-                  <div className="aspect-[6/5] w-full rounded-[6px] border border-line bg-sunken p-4 font-mono text-[0.7rem] flex flex-col justify-between overflow-hidden shadow-inner">
+                  <div className="group relative min-h-[380px] md:min-h-[440px] w-full rounded-[8px] border border-line bg-gradient-to-br from-white to-subtle p-4 font-mono text-[0.7rem] flex flex-col justify-between overflow-hidden shadow-sm">
+                    <span className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-zinc-400/30 to-transparent" />
                     <div className="flex items-center justify-between border-b border-line pb-2 mb-2">
                       <div className="flex items-center gap-1.5">
                         <span className="h-2 w-2 rounded-full bg-red-400" />
                         <span className="h-2 w-2 rounded-full bg-yellow-400" />
                         <span className="h-2 w-2 rounded-full bg-green-400" />
                       </div>
-                      <span className="text-[0.6rem] text-muted">POST /api/jobs</span>
+                      <span className="text-[0.6rem] text-muted"><span className="text-zinc-800 font-bold">POST</span> /api/jobs</span>
                     </div>
-                    <div className="flex-1 gap-3 flex flex-col justify-center">
-                      <div className="rounded bg-paper p-3 border border-line text-muted">
-                        <span className="text-blue-500">const</span> pipeline = <span className="text-blue-500">new</span> VideoPipeline();{"\n"}
-                        <span className="text-blue-500">await</span> pipeline.transcode(rawFile, {"{"} resolutions: [<span className="text-amber-600">'1080p'</span>] {"}"});
+                    <div className="flex-1 flex flex-col justify-between py-2 text-[0.68rem] leading-normal">
+                      <div className="rounded bg-paper p-4 border border-line font-mono text-[0.65rem] text-muted space-y-2">
+                        <div><span className="text-zinc-700 font-bold">POST</span> /api/v1/jobs <span className="text-zinc-400">HTTP/1.1</span></div>
+                        <div className="text-zinc-400 border-t border-line/40 pt-2 mt-2 space-y-1">
+                          <div>{"{"}</div>
+                          <div className="pl-3">"input": <span className="text-amber-700">"s3://raw/source.mp4"</span>,</div>
+                          <div className="pl-3">"outputs": [{"{"} "format": <span className="text-amber-700">"hls"</span>, "ladder": <span className="text-amber-700">"hd"</span> {"}"}],</div>
+                          <div className="pl-3">"webhook": <span className="text-amber-700">"https://api.app/webhook"</span></div>
+                          <div>{"}"}</div>
+                        </div>
                       </div>
-                      <div className="rounded bg-ink p-3 text-neutral-300">
-                        <span className="text-emerald-400">{"{"}</span> status: <span className="text-emerald-300">"processing"</span>, progress: <span className="text-amber-300">"42%"</span> <span className="text-emerald-400">{"}"}</span>
+                      <div className="rounded bg-ink p-4 font-mono text-[0.65rem] text-neutral-300 space-y-2">
+                        <div className="text-zinc-500"># HTTP/1.1 202 Accepted</div>
+                        <div className="space-y-1">
+                          <div>{"{"}</div>
+                          <div className="pl-3">"job_id": <span className="text-emerald-400">"job_9x2f7a"</span>,</div>
+                          <div className="pl-3">"status": <span className="text-amber-400">"processing"</span>,</div>
+                          <div className="pl-3">"progress": <span className="text-emerald-400">"42%"</span></div>
+                          <div>{"}"}</div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -483,37 +466,56 @@ export function Landing({ onSignIn }: Props) {
                 className="flex flex-col md:border-r md:border-line border-b md:border-b-0"
               >
                 <div className="pt-[7px] px-[7px]">
-                  <div className="aspect-[6/5] w-full rounded-[6px] border border-line bg-sunken p-4 flex flex-col justify-between overflow-hidden shadow-inner">
+                  <div className="group relative min-h-[380px] md:min-h-[440px] w-full rounded-[8px] border border-line bg-gradient-to-br from-white to-subtle p-4 flex flex-col justify-between overflow-hidden shadow-sm">
+                    <span className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-zinc-400/30 to-transparent" />
                     <div className="flex items-center justify-between border-b border-line pb-2 mb-2">
                       <span className="text-[0.65rem] font-mono text-muted">Transcoding Worker Pool</span>
-                      <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[0.6rem] font-mono text-emerald-600">Active</span>
+                      <span className="inline-flex items-center gap-1 rounded bg-zinc-200/60 px-1.5 py-0.5 text-[0.6rem] font-mono text-zinc-800"><span className="h-1.5 w-1.5 rounded-full bg-zinc-600 animate-pulse" />Active</span>
                     </div>
-                    <div className="flex-1 flex flex-col justify-center gap-4">
-                      <div className="space-y-1.5">
-                        <div className="flex justify-between text-[0.7rem] font-mono">
-                          <span className="text-ink">1080p (HLS)</span>
-                          <span className="text-muted">100%</span>
+                    <div className="flex-1 flex flex-col justify-between py-2 text-[0.68rem] font-mono">
+                      <div className="border border-line rounded p-4 bg-paper/60 space-y-3">
+                        <div className="flex justify-between items-center text-xs text-ink font-semibold">
+                          <span>Metadata Analysis</span>
+                          <span className="text-[10px] text-zinc-500">Done (120ms)</span>
                         </div>
-                        <div className="h-1.5 w-full rounded-full bg-line overflow-hidden">
-                          <div className="h-full w-full bg-ink rounded-full" />
-                        </div>
-                      </div>
-                      <div className="space-y-1.5">
-                        <div className="flex justify-between text-[0.7rem] font-mono">
-                          <span className="text-ink">720p (HLS)</span>
-                          <span className="text-muted">82%</span>
-                        </div>
-                        <div className="h-1.5 w-full rounded-full bg-line overflow-hidden">
-                          <div className="h-full w-[82%] bg-ink rounded-full" />
+                        <div className="text-[10px] text-muted leading-tight">
+                          Source: H.264 / AAC / 1080p @ 60fps / 42.1 Mbps
                         </div>
                       </div>
-                      <div className="space-y-1.5">
-                        <div className="flex justify-between text-[0.7rem] font-mono">
-                          <span className="text-ink">480p (HLS)</span>
-                          <span className="text-muted">45%</span>
+
+                      <div className="space-y-3 border border-line rounded p-4 bg-paper/60">
+                        <div className="flex justify-between items-center text-[11px] text-ink font-semibold">
+                          <span>Multi-Bitrate HLS Transcoding</span>
+                          <span className="text-[10px] text-zinc-700 animate-pulse">82%</span>
                         </div>
-                        <div className="h-1.5 w-full rounded-full bg-line overflow-hidden">
-                          <div className="h-full w-[45%] bg-ink rounded-full" />
+                        <div className="space-y-2">
+                          <div className="space-y-1.5">
+                            <div className="flex justify-between text-[9px] text-muted">
+                              <span>1080p (6.0 Mbps) · H.264</span>
+                              <span>100%</span>
+                            </div>
+                            <div className="h-1.5 w-full rounded-full bg-line overflow-hidden">
+                              <div className="h-full w-full bg-zinc-800 rounded-full" />
+                            </div>
+                          </div>
+                          <div className="space-y-1.5">
+                            <div className="flex justify-between text-[9px] text-muted">
+                              <span>720p (3.0 Mbps) · H.264</span>
+                              <span>82%</span>
+                            </div>
+                            <div className="h-1.5 w-full rounded-full bg-line overflow-hidden">
+                              <div className="h-full w-[82%] bg-zinc-800 rounded-full" />
+                            </div>
+                          </div>
+                          <div className="space-y-1.5">
+                            <div className="flex justify-between text-[9px] text-muted">
+                              <span>480p (1.2 Mbps) · H.264</span>
+                              <span>45%</span>
+                            </div>
+                            <div className="h-1.5 w-full rounded-full bg-line overflow-hidden">
+                              <div className="h-full w-[45%] bg-zinc-800 rounded-full" />
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -525,7 +527,7 @@ export function Landing({ onSignIn }: Props) {
                     Convert raw uploads into HLS. Enjoy adaptive, butter-smooth video delivery across mobile, web, and desktop.
                   </p>
                   <a href="#features" className="inline-flex items-center text-sm font-semibold text-ink hover:underline">
-                    Pipeline features <span className="ml-1">→</span>
+                    Vodeum features <span className="ml-1">→</span>
                   </a>
                 </div>
               </motion.div>
@@ -539,21 +541,53 @@ export function Landing({ onSignIn }: Props) {
                 className="flex flex-col"
               >
                 <div className="pt-[7px] px-[7px]">
-                  <div className="aspect-[6/5] w-full rounded-[6px] border border-line bg-sunken p-4 flex flex-col justify-between overflow-hidden shadow-inner">
+                  <div className="group relative min-h-[380px] md:min-h-[440px] w-full rounded-[8px] border border-line bg-gradient-to-br from-white to-subtle p-4 flex flex-col justify-between overflow-hidden shadow-sm">
+                    <span className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-zinc-400/30 to-transparent" />
                     <div className="flex items-center justify-between border-b border-line pb-2 mb-2">
                       <span className="text-[0.65rem] font-mono text-muted">Egress Savings Ratio</span>
                       <span className="text-[0.65rem] font-mono font-medium text-emerald-600">-95% Cost</span>
                     </div>
-                    <div className="flex-1 flex items-end justify-around gap-4 pt-6 pb-2">
-                      <div className="flex flex-col items-center gap-2 w-full">
-                        <span className="text-[0.7rem] font-mono text-muted">$1,200</span>
-                        <div className="w-10 bg-neutral-200 rounded-t-sm h-36" />
-                        <span className="text-[0.65rem] font-semibold text-ink-2">SaaS Video</span>
+                    <div className="flex-1 flex flex-col justify-between py-2 text-[0.68rem] font-mono">
+                      {/* Breakdown Table */}
+                      <div className="border border-line rounded p-4 bg-paper/60 space-y-2">
+                        <div className="grid grid-cols-3 text-[9px] text-muted border-b border-line pb-1.5 font-semibold uppercase">
+                          <span>Service</span>
+                          <span className="text-right">SaaS</span>
+                          <span className="text-right">Self-Host</span>
+                        </div>
+                        <div className="grid grid-cols-3 text-[10px] text-ink py-0.5">
+                          <span>Bandwidth</span>
+                          <span className="text-right text-red-600 font-semibold">$0.08 / GB</span>
+                          <span className="text-right text-emerald-600 font-semibold">$0.00 / GB</span>
+                        </div>
+                        <div className="grid grid-cols-3 text-[10px] text-ink py-0.5">
+                          <span>Encoding</span>
+                          <span className="text-right text-red-600 font-semibold">$0.015 / min</span>
+                          <span className="text-right text-emerald-600 font-semibold">$0.00 / min</span>
+                        </div>
+                        <div className="grid grid-cols-3 text-[10px] text-ink py-0.5">
+                          <span>S3 Storage</span>
+                          <span className="text-right text-red-600 font-semibold">$0.023 / GB</span>
+                          <span className="text-right text-emerald-600 font-semibold">$0.015 / GB</span>
+                        </div>
                       </div>
-                      <div className="flex flex-col items-center gap-2 w-full">
-                        <span className="text-[0.7rem] font-mono font-bold text-emerald-600">$45</span>
-                        <div className="w-10 bg-emerald-500 rounded-t-sm h-9" />
-                        <span className="text-[0.65rem] font-semibold text-ink">Self-Hosted</span>
+
+                      {/* Bar graph */}
+                      <div className="flex items-end justify-around gap-4 pt-3 pb-2 border border-line rounded p-4 bg-paper/60">
+                        <div className="flex flex-col items-center gap-2 w-full">
+                          <span className="text-[0.65rem] font-bold text-red-600">$1,200/mo</span>
+                          <div className="w-full bg-neutral-200 rounded-t-sm h-28 relative overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-t from-neutral-300 to-neutral-200" />
+                          </div>
+                          <span className="text-[9px] font-bold text-muted uppercase">SaaS Video</span>
+                        </div>
+                        <div className="flex flex-col items-center gap-2 w-full">
+                          <span className="text-[0.65rem] font-bold text-emerald-600">$45/mo</span>
+                          <div className="w-full bg-zinc-800 rounded-t-sm h-3 relative overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 to-zinc-800" />
+                          </div>
+                          <span className="text-[9px] font-bold text-ink uppercase">Self-Hosted</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -578,7 +612,7 @@ export function Landing({ onSignIn }: Props) {
             <div className="grid gap-12 md:grid-cols-[1.1fr_1.9fr] md:gap-20 py-20 px-6">
               {/* Left Column */}
               <div>
-                <span className="font-mono text-xs uppercase tracking-[0.08em] text-muted">[ QUESTIONS ]</span>
+                <span className="font-mono text-xs uppercase tracking-[0.08em] text-muted">[ <span className="text-brand">COMMON</span> · <span className="text-ink">QUESTIONS</span> ]</span>
                 <h2 className="mt-4 text-[clamp(2.2rem,5vw,3rem)] font-semibold tracking-[-0.03em] leading-[1.05] text-ink">
                   Frequently Asked Questions
                 </h2>
@@ -596,7 +630,7 @@ export function Landing({ onSignIn }: Props) {
 
         {/* CTA band */}
         <section data-reveal className="border-b border-line px-6 py-20 text-center">
-          <span className="font-mono text-xs uppercase tracking-[0.08em] text-muted">[ READY? ]</span>
+          <span className="font-mono text-xs uppercase tracking-[0.08em] text-muted">[ <span className="text-brand">GET</span> · <span className="text-ink">STARTED</span> ]</span>
           <h2 className="mx-auto mt-4 max-w-[16ch] text-[clamp(2rem,5vw,3.2rem)] font-semibold leading-[1.05] tracking-[-0.02em]">
             Ship your own video platform.
           </h2>
@@ -604,55 +638,12 @@ export function Landing({ onSignIn }: Props) {
             No SaaS lock-in, no per-minute billing. Run it on your own infrastructure and stream on your terms.
           </p>
           <div className="mt-8 flex justify-center">
-            <motion.button whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }} onClick={onSignIn} className={cn(btn.primary, "glare-effect")}>
+            <Link to="/register" className={cn(btn.primary, "glare-effect")}>
               Get started →
-            </motion.button>
+            </Link>
           </div>
         </section>
       </main>
-
-      {/* Footer */}
-      <footer className="mx-auto max-w-[1280px] border-x border-line px-6 py-12">
-        <div className="grid grid-cols-2 gap-8 md:grid-cols-[1.4fr_repeat(3,1fr)]">
-          <div>
-            <Brand />
-            <p className="mt-3 max-w-[26ch] text-sm text-muted">An open-source, self-hosted video-on-demand platform.</p>
-          </div>
-          <FootCol title="Product" links={[["Features", "#features"], ["How it works", "#how"]]} onSignIn={onSignIn} />
-          <FootCol title="Resources" links={[["Documentation", REPO], ["Architecture", `${REPO}/blob/main/docs/architecture.md`]]} />
-          <FootCol title="Project" links={[["GitHub", REPO], ["Issues", `${REPO}/issues`]]} />
-        </div>
-      </footer>
-      <div className="mx-auto flex max-w-[1280px] flex-wrap justify-between gap-2 border-x border-t border-line px-6 py-5 text-[0.82rem] text-muted">
-        <span>© {new Date().getFullYear()} Video Pipeline. MIT Licensed.</span>
-        <span>Built by Archilect Studios</span>
-      </div>
-    </div>
-  );
-}
-
-function Brand() {
-  return (
-    <span className="flex items-center gap-2 text-[0.98rem] font-semibold">
-      <span className="inline-block h-4 w-4 rounded-full border-[3px] border-ink" /> Video Pipeline
-    </span>
-  );
-}
-
-function FootCol({ title, links, onSignIn }: { title: string; links: string[][]; onSignIn?: () => void }) {
-  return (
-    <div>
-      <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">{title}</h4>
-      <ul className="flex flex-col gap-2.5">
-        {links.map(([t, h]) => (
-          <li key={t}>
-            <a href={h} target={h.startsWith("http") ? "_blank" : undefined} rel="noreferrer" className="text-sm text-ink-2 transition-colors hover:text-ink">{t}</a>
-          </li>
-        ))}
-        {onSignIn && (
-          <li><button onClick={onSignIn} className="text-sm text-ink-2 transition-colors hover:text-ink">Sign in</button></li>
-        )}
-      </ul>
     </div>
   );
 }

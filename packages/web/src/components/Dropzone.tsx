@@ -48,10 +48,15 @@ export function Dropzone({ onUploaded }: { onUploaded: () => void }) {
         onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])}
       />
       {uploadPct === null ? (
-        <p>📤 Drag &amp; drop a video here, or click to choose a file.</p>
+        <div className="flex flex-col items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-muted">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+          </svg>
+          <p className="text-[0.95rem]">Drag &amp; drop a video here, or click to choose a file.</p>
+        </div>
       ) : (
         <div className="mx-auto max-w-[360px]">
-          <p className="mb-2">Uploading… {uploadPct}%</p>
+          <p className="mb-2 text-sm">Uploading… {uploadPct}%</p>
           <div className="h-2 overflow-hidden rounded-full bg-sunken">
             <span className="block h-full rounded-full bg-brand transition-[width] duration-300" style={{ width: `${uploadPct}%` }} />
           </div>

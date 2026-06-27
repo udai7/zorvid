@@ -29,7 +29,11 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (res.status === 204) return undefined as T;
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
-    if (res.status === 401) setToken(null); // expired/invalid — force re-login
+    if (res.status === 401) {
+      setToken(null); // expired/invalid — force re-login
+      // Notify the auth context so route guards re-evaluate immediately.
+      window.dispatchEvent(new Event("vp:auth-expired"));
+    }
     throw new ApiError(res.status, (body as { error?: string }).error ?? res.statusText);
   }
   return body as T;

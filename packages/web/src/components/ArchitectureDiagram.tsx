@@ -140,111 +140,151 @@ export default function ArchitectureDiagram() {
 
   return (
     <div className="w-full">
-      {/* Desktop Visual Map */}
-      <div className="hidden lg:block w-full overflow-x-auto select-none py-4">
-        <div className="relative w-[1000px] h-[550px] mx-auto">
-          {/* SVG Connection Layers */}
-          <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 1000 550">
-            <defs>
-              <marker
-                id="arrow-default"
-                viewBox="0 0 10 10"
-                refX="7"
-                refY="5"
-                markerWidth="5"
-                markerHeight="5"
-                orient="auto-start-reverse"
-              >
-                <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#d4d4d8" />
-              </marker>
-              <marker
-                id="arrow-active"
-                viewBox="0 0 10 10"
-                refX="7"
-                refY="5"
-                markerWidth="6"
-                markerHeight="6"
-                orient="auto-start-reverse"
-              >
-                <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#18181b" />
-              </marker>
-            </defs>
+      {/* Desktop Visual Map — light panel */}
+      <div className="hidden lg:block w-full select-none rounded-xl border border-line bg-gradient-to-br from-white via-paper to-subtle p-6 shadow-sm">
+        <div className="w-full overflow-x-auto">
+          <div className="relative mx-auto h-[550px] w-[1000px]">
+            {/* Ambient grid texture */}
+            <div
+              className="pointer-events-none absolute inset-0 opacity-[0.25]"
+              style={{
+                backgroundImage:
+                  "linear-gradient(rgba(14,165,233,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(14,165,233,0.08) 1px, transparent 1px)",
+                backgroundSize: "40px 40px",
+                maskImage: "radial-gradient(ellipse 80% 70% at 50% 50%, #000 40%, transparent 100%)",
+                WebkitMaskImage: "radial-gradient(ellipse 80% 70% at 50% 50%, #000 40%, transparent 100%)",
+              }}
+            />
 
-            {/* Background Paths */}
-            {PATHS.map((path) => {
-              const active = isPathActive(path.id);
-              const dimmed = hoveredNode !== null && !active;
+            {/* SVG Fiber-Optic Connection Layer */}
+            <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 1000 550">
+              <defs>
+                {/* Cable core gradient (the glass strand) */}
+                <linearGradient id="cable-core" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor="#1e3a5f" />
+                  <stop offset="50%" stopColor="#2a4d75" />
+                  <stop offset="100%" stopColor="#1e3a5f" />
+                </linearGradient>
+                {/* The travelling photon */}
+                <radialGradient id="beam-core">
+                  <stop offset="0%" stopColor="#ffffff" />
+                  <stop offset="35%" stopColor="#7dd3fc" />
+                  <stop offset="100%" stopColor="rgba(56,189,248,0)" />
+                </radialGradient>
+                {/* Soft glow for active fibers + photons */}
+                <filter id="fiber-glow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="2.4" result="blur" />
+                  <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
+
+              {/* Fiber cables */}
+              {PATHS.map((path, i) => {
+                const active = isPathActive(path.id);
+                const dimmed = hoveredNode !== null && !active;
+
+                return (
+                  <g
+                    key={path.id}
+                    className={cn(
+                      "transition-opacity duration-300",
+                      dimmed ? "opacity-15" : "opacity-100"
+                    )}
+                  >
+                    {/* Outer glow halo (only when active) */}
+                    {active && (
+                      <path
+                        d={path.d}
+                        fill="none"
+                        stroke="#38bdf8"
+                        strokeWidth={6}
+                        strokeLinecap="round"
+                        opacity={0.18}
+                        filter="url(#fiber-glow)"
+                      />
+                    )}
+                    {/* The glass strand */}
+                    <path
+                      d={path.d}
+                      fill="none"
+                      stroke={active ? "#38bdf8" : "#cbd5e1"}
+                      strokeWidth={active ? 1.8 : 1.4}
+                      strokeLinecap="round"
+                      className="transition-all duration-300"
+                    />
+                    {/* Beam of light travelling along the fiber */}
+                    <circle r={active ? 4.5 : 3} fill="url(#beam-core)" filter="url(#fiber-glow)">
+                      <animateMotion
+                        dur={`${2.6 + (i % 3) * 0.4}s`}
+                        begin={`${(i * 0.45).toFixed(2)}s`}
+                        repeatCount="indefinite"
+                        path={path.d}
+                        rotate="auto"
+                      />
+                    </circle>
+                  </g>
+                );
+              })}
+            </svg>
+
+            {/* Glass Node Cards */}
+            {NODES.map((node) => {
+              const connected = isNodeConnected(node.id);
+              const isHovered = hoveredNode === node.id;
+              const dimmed = hoveredNode !== null && !connected;
 
               return (
-                <path
-                  key={path.id}
-                  d={path.d}
-                  fill="none"
-                  stroke={active ? "#18181b" : "#e4e4e7"}
-                  strokeWidth={active ? 2.5 : 1.5}
-                  markerEnd={active ? "url(#arrow-active)" : "url(#arrow-default)"}
+                <div
+                  key={node.id}
+                  style={{
+                    position: "absolute",
+                    left: node.x,
+                    top: node.y,
+                    width: node.w,
+                    height: node.h,
+                  }}
+                  onMouseEnter={() => setHoveredNode(node.id)}
+                  onMouseLeave={() => setHoveredNode(null)}
                   className={cn(
-                    "transition-all duration-300",
-                    dimmed && "opacity-20",
-                    active && "stroke-[2.5px] text-ink drop-shadow-[0_1px_3px_rgba(24,24,27,0.1)]"
+                    "group relative flex cursor-pointer flex-col justify-between rounded-[6px] border border-line p-3.5 bg-white transition-all duration-300",
+                    dimmed && "scale-[0.98] border-line opacity-30",
+                    !dimmed && "scale-100 opacity-100",
+                    isHovered
+                      ? "border-sky-500 shadow-md ring-[3px] ring-sky-500/5"
+                      : "border-line shadow-sm hover:border-sky-500/30"
                   )}
-                />
+                >
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[0.82rem] font-bold tracking-tight text-ink">{node.title}</span>
+                    </div>
+                    <span className="mt-0.5 block font-mono text-[0.7rem] text-sky-600">{node.sub}</span>
+                  </div>
+                  <p className="mt-2 line-clamp-3 text-[0.68rem] leading-relaxed text-muted">
+                    {node.desc}
+                  </p>
+                </div>
               );
             })}
-          </svg>
-
-          {/* Node Cards */}
-          {NODES.map((node) => {
-            const connected = isNodeConnected(node.id);
-            const isHovered = hoveredNode === node.id;
-            const dimmed = hoveredNode !== null && !connected;
-
-            return (
-              <div
-                key={node.id}
-                style={{
-                  position: "absolute",
-                  left: node.x,
-                  top: node.y,
-                  width: node.w,
-                  height: node.h,
-                }}
-                onMouseEnter={() => setHoveredNode(node.id)}
-                onMouseLeave={() => setHoveredNode(null)}
-                className={cn(
-                  "rounded-md border p-3 flex flex-col justify-between transition-all duration-300 cursor-pointer bg-white",
-                  dimmed && "opacity-30 scale-[0.98] border-line",
-                  !dimmed && "opacity-100 scale-100",
-                  isHovered ? "border-ink shadow-md ring-[3px] ring-ink/5" : "border-line shadow-sm hover:border-ink hover:shadow"
-                )}
-              >
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[0.82rem] font-bold tracking-tight text-ink">{node.title}</span>
-                  </div>
-                  <span className="text-[0.7rem] font-mono text-muted block mt-0.5">{node.sub}</span>
-                </div>
-                <p className="text-[0.68rem] text-muted-2 leading-relaxed mt-2 line-clamp-3">
-                  {node.desc}
-                </p>
-              </div>
-            );
-          })}
+          </div>
         </div>
       </div>
 
-      {/* Mobile / Tablet Accordion-Style Stack */}
-      <div className="lg:hidden flex flex-col gap-4">
+      {/* Mobile / Tablet Stack */}
+      <div className="flex flex-col gap-4 rounded-xl border border-line bg-gradient-to-br from-white to-subtle p-4 lg:hidden">
         {NODES.map((node) => (
           <div
             key={node.id}
-            className="rounded-lg border border-line bg-white p-5 shadow-sm hover:border-ink transition-colors"
+            className="relative rounded-[6px] border border-line bg-white p-5 transition-colors hover:border-sky-500/50"
           >
-            <div className="flex items-center justify-between border-b border-line pb-2 mb-2">
+            <div className="mb-2 flex items-center justify-between border-b border-line pb-2">
               <span className="text-sm font-bold text-ink">{node.title}</span>
-              <span className="text-xs font-mono text-muted">{node.sub}</span>
+              <span className="font-mono text-xs text-sky-600">{node.sub}</span>
             </div>
-            <p className="text-xs text-muted-2 leading-relaxed">{node.desc}</p>
+            <p className="text-xs leading-relaxed text-muted">{node.desc}</p>
           </div>
         ))}
       </div>
