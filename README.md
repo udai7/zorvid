@@ -1,6 +1,6 @@
 # 🎬 Video Processing Pipeline
 
-[![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
+[![CI](https://github.com/udai7/video_processing_pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/udai7/video_processing_pipeline/actions/workflows/ci.yml)
 
 A self-hosted **video-on-demand platform**: upload a video, watch it get transcoded
 into **adaptive HLS** in the background, then stream it with automatic quality

@@ -43,9 +43,12 @@ export async function videoRoutes(app: FastifyInstance) {
   // GET /api/videos — list the current user's videos.
   app.get("/", async (req) => {
     const { rows } = await pool.query(
-      `SELECT id, title, original_filename, status, visibility, metadata,
-              master_playlist_key, created_at
-       FROM videos WHERE user_id = $1 ORDER BY created_at DESC`,
+      `SELECT v.id, v.title, v.original_filename, v.status, v.visibility, v.metadata,
+              v.master_playlist_key, v.created_at,
+              j.progress, j.stage, j.error_message
+       FROM videos v
+       LEFT JOIN jobs j ON j.video_id = v.id
+       WHERE v.user_id = $1 ORDER BY v.created_at DESC`,
       [req.user.id]
     );
     return { videos: rows };
