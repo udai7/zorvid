@@ -30,6 +30,40 @@ async function ownsVideo(userId: string, videoId: string): Promise<boolean> {
  * short-lived stream token carried on every request by hls.js's xhrSetup.
  */
 export async function streamRoutes(app: FastifyInstance) {
+  // GET /api/videos/:id/file?token=… — stream the original upload as a download.
+  // Authorized by a short-lived download token minted at /:id/download.
+  app.get("/:id/file", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const { token } = req.query as { token?: string };
+    if (!token) return reply.code(401).send({ error: "unauthorized" });
+
+    try {
+      const decoded = app.jwt.verify(token) as { id: string; scope?: string };
+      if (decoded.scope !== "download" || decoded.id !== id) throw new Error("bad token");
+    } catch {
+      return reply.code(401).send({ error: "unauthorized" });
+    }
+
+    const { rows } = await pool.query(
+      "SELECT original_filename FROM videos WHERE id = $1",
+      [id]
+    );
+    const filename = rows[0]?.original_filename;
+    if (!filename) return reply.code(404).send({ error: "not found" });
+
+    try {
+      const obj = await s3.send(
+        new GetObjectCommand({ Bucket: BUCKETS.inputs, Key: `${id}/${filename}` })
+      );
+      reply.header("content-type", "application/octet-stream");
+      reply.header("content-disposition", `attachment; filename="${filename.replace(/"/g, "")}"`);
+      if (obj.ContentLength) reply.header("content-length", String(obj.ContentLength));
+      return reply.send(obj.Body as Readable);
+    } catch {
+      return reply.code(404).send({ error: "not found" });
+    }
+  });
+
   // GET /api/videos/:id/stream — resolve the playback URL for a completed video.
   app.get("/:id/stream", { preHandler: app.authenticate }, async (req, reply) => {
     const { id } = req.params as { id: string };

@@ -10,7 +10,7 @@ const COLS: Array<{ title: string; links: FooterLink[] }> = [
     links: [
       ["Features", "/features"],
       ["How it works", "/how-it-works"],
-      ["Pricing", "/pricing"],
+      ["Upload", "/upload"],
     ],
   },
   {

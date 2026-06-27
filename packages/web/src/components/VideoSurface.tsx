@@ -8,7 +8,16 @@ import { cn } from "../lib/ui";
  * drives hls.js. Private streams attach a short-lived token on every (nested)
  * request via xhrSetup so child playlists and segments stay authorized.
  */
-export function VideoSurface({ videoId, autoPlay = true }: { videoId: string; autoPlay?: boolean }) {
+export function VideoSurface({
+  videoId,
+  directUrl,
+  autoPlay = true,
+}: {
+  videoId: string;
+  /** When set, play this HLS URL directly (no auth/token) — used for public embeds. */
+  directUrl?: string;
+  autoPlay?: boolean;
+}) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const [levels, setLevels] = useState<string[]>([]);
@@ -26,7 +35,9 @@ export function VideoSurface({ videoId, autoPlay = true }: { videoId: string; au
 
     (async () => {
       try {
-        const { url, token } = await api.getStream(videoId);
+        const { url, token } = directUrl
+          ? { url: directUrl, token: undefined as string | undefined }
+          : await api.getStream(videoId);
         if (cancelled) return;
 
         if (Hls.isSupported()) {
@@ -61,7 +72,7 @@ export function VideoSurface({ videoId, autoPlay = true }: { videoId: string; au
       hlsRef.current?.destroy();
       hlsRef.current = null;
     };
-  }, [videoId, autoPlay]);
+  }, [videoId, directUrl, autoPlay]);
 
   function selectLevel(level: number) {
     setCurrent(level);

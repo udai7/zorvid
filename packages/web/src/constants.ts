@@ -8,6 +8,5 @@ export const BRAND = "Vodeum";
 export const NAV_LINKS: Array<[label: string, href: string]> = [
   ["Features", "/features"],
   ["How it works", "/how-it-works"],
-  ["Pricing", "/pricing"],
   ["Docs", "/docs"],
 ];

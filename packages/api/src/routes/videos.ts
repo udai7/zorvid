@@ -70,19 +70,51 @@ export async function videoRoutes(app: FastifyInstance) {
     return rows[0];
   });
 
-  // PATCH /api/videos/:id — set visibility (public | private).
+  // PATCH /api/videos/:id — rename (title) and/or set visibility.
   app.patch("/:id", async (req, reply) => {
     const { id } = req.params as { id: string };
-    const { visibility } = (req.body ?? {}) as { visibility?: string };
-    if (visibility !== "public" && visibility !== "private")
-      return reply.code(400).send({ error: "visibility must be 'public' or 'private'" });
+    const { visibility, title } = (req.body ?? {}) as { visibility?: string; title?: string };
 
-    const { rowCount } = await pool.query(
-      "UPDATE videos SET visibility = $1 WHERE id = $2 AND user_id = $3",
-      [visibility, id, req.user.id]
+    const sets: string[] = [];
+    const vals: unknown[] = [];
+
+    if (visibility !== undefined) {
+      if (visibility !== "public" && visibility !== "private")
+        return reply.code(400).send({ error: "visibility must be 'public' or 'private'" });
+      sets.push(`visibility = $${sets.length + 1}`);
+      vals.push(visibility);
+    }
+    if (title !== undefined) {
+      const trimmed = String(title).trim();
+      if (!trimmed) return reply.code(400).send({ error: "title cannot be empty" });
+      sets.push(`title = $${sets.length + 1}`);
+      vals.push(trimmed);
+    }
+    if (sets.length === 0) return reply.code(400).send({ error: "nothing to update" });
+
+    vals.push(id, req.user.id);
+    const { rows, rowCount } = await pool.query(
+      `UPDATE videos SET ${sets.join(", ")}
+       WHERE id = $${vals.length - 1} AND user_id = $${vals.length}
+       RETURNING id, title, visibility`,
+      vals
     );
     if (!rowCount) return reply.code(404).send({ error: "not found" });
-    return { id, visibility };
+    return rows[0];
+  });
+
+  // GET /api/videos/:id/download — mint a short-lived URL to the original file.
+  // The token lets a plain browser navigation stream the file (see /:id/file).
+  app.get("/:id/download", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const { rows } = await pool.query(
+      "SELECT original_filename FROM videos WHERE id = $1 AND user_id = $2",
+      [id, req.user.id]
+    );
+    if (!rows[0]) return reply.code(404).send({ error: "not found" });
+
+    const token = app.jwt.sign({ id, scope: "download" } as never, { expiresIn: 300 });
+    return { url: `/api/videos/${id}/file?token=${token}`, filename: rows[0].original_filename };
   });
 
   // DELETE /api/videos/:id — remove DB rows (jobs cascade) + all stored objects.

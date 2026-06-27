@@ -78,6 +78,51 @@ describe("videos", () => {
     assert.equal(gone.statusCode, 404);
   });
 
+  test("rename and download the original", async () => {
+    const form = new FormData();
+    form.append("file", Buffer.from("original-bytes"), { filename: "src.mp4", contentType: "video/mp4" });
+    const up = await app.inject({
+      method: "POST",
+      url: "/api/videos",
+      headers: { ...auth(), ...form.getHeaders() },
+      payload: form,
+    });
+    const id = up.json().id;
+
+    // rename
+    const patch = await app.inject({
+      method: "PATCH",
+      url: `/api/videos/${id}`,
+      headers: { ...auth(), "content-type": "application/json" },
+      payload: { title: "Renamed Clip" },
+    });
+    assert.equal(patch.statusCode, 200);
+    assert.equal(patch.json().title, "Renamed Clip");
+
+    // empty title is rejected
+    const bad = await app.inject({
+      method: "PATCH",
+      url: `/api/videos/${id}`,
+      headers: { ...auth(), "content-type": "application/json" },
+      payload: { title: "   " },
+    });
+    assert.equal(bad.statusCode, 400);
+
+    // download url + fetch the original bytes via the token
+    const dl = await app.inject({ method: "GET", url: `/api/videos/${id}/download`, headers: auth() });
+    assert.equal(dl.statusCode, 200);
+    const { url } = dl.json();
+    assert.match(url, /\/file\?token=/);
+
+    const file = await app.inject({ method: "GET", url });
+    assert.equal(file.statusCode, 200);
+    assert.equal(file.body, "original-bytes");
+
+    // without a token the file is not accessible
+    const noToken = await app.inject({ method: "GET", url: `/api/videos/${id}/file` });
+    assert.equal(noToken.statusCode, 401);
+  });
+
   test("a user cannot see another user's video", async () => {
     const form = new FormData();
     form.append("file", Buffer.from("x"), { filename: "a.mp4", contentType: "video/mp4" });

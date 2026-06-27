@@ -7,13 +7,13 @@ import { Login } from "./components/Login";
 import { Register } from "./pages/Register";
 import { Features } from "./pages/Features";
 import { HowItWorks } from "./pages/HowItWorks";
-import { Pricing } from "./pages/Pricing";
 import { Docs } from "./pages/Docs";
 import { Privacy, Terms } from "./pages/Legal";
 import { NotFound } from "./pages/NotFound";
 import { Dashboard } from "./pages/Dashboard";
 import { Upload } from "./pages/Upload";
 import { Watch } from "./pages/Watch";
+import { Embed } from "./pages/Embed";
 
 export function App() {
   return (
@@ -23,7 +23,6 @@ export function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/features" element={<Features />} />
         <Route path="/how-it-works" element={<HowItWorks />} />
-        <Route path="/pricing" element={<Pricing />} />
         <Route path="/docs" element={<Docs />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
@@ -32,6 +31,9 @@ export function App() {
       {/* Auth */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+
+      {/* Public, chrome-less player for shared/embedded videos */}
+      <Route path="/embed/:id" element={<Embed />} />
 
       {/* Authenticated app */}
       <Route element={<RequireAuth />}>

@@ -1,6 +1,20 @@
-import type { AuthResponse, StreamInfo, Video } from "./types";
+import type {
+  AuthConfig,
+  AuthResponse,
+  AuthResult,
+  OtpChallenge,
+  OtpPurpose,
+  RegisterInput,
+  StreamInfo,
+  Video,
+} from "./types";
 
 const BASE = import.meta.env.VITE_API_BASE ?? "/api";
+
+/** Direct HLS master playlist URL — serves public videos anonymously (for embeds). */
+export function hlsMasterUrl(id: string): string {
+  return `${BASE}/videos/${id}/hls/master.m3u8`;
+}
 
 let token: string | null = localStorage.getItem("vp_token");
 
@@ -40,18 +54,41 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 export const api = {
-  register: (email: string, password: string) =>
-    request<AuthResponse>("/auth/register", {
+  authConfig: () => request<AuthConfig>("/auth/config"),
+
+  register: (input: RegisterInput) =>
+    request<AuthResult>("/auth/register", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(input),
+    }),
+
+  login: (email: string, password: string) =>
+    request<AuthResult>("/auth/login", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ email, password }),
     }),
 
-  login: (email: string, password: string) =>
-    request<AuthResponse>("/auth/login", {
+  verifyOtp: (email: string, code: string, purpose: OtpPurpose) =>
+    request<AuthResponse>("/auth/verify-otp", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, code, purpose }),
+    }),
+
+  resendOtp: (email: string, purpose: OtpPurpose) =>
+    request<OtpChallenge>("/auth/resend-otp", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email, purpose }),
+    }),
+
+  googleAuth: (credential: string) =>
+    request<AuthResponse>("/auth/google", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ credential }),
     }),
 
   listVideos: () => request<{ videos: Video[] }>("/videos").then((r) => r.videos),
@@ -77,12 +114,17 @@ export const api = {
       xhr.send(form);
     }),
 
-  setVisibility: (id: string, visibility: "public" | "private") =>
-    request<{ id: string; visibility: string }>(`/videos/${id}`, {
+  updateVideo: (id: string, patch: { title?: string; visibility?: "public" | "private" }) =>
+    request<{ id: string; title: string; visibility: "public" | "private" }>(`/videos/${id}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ visibility }),
+      body: JSON.stringify(patch),
     }),
+
+  setVisibility: (id: string, visibility: "public" | "private") =>
+    api.updateVideo(id, { visibility }),
+
+  getDownload: (id: string) => request<{ url: string; filename: string }>(`/videos/${id}/download`),
 
   deleteVideo: (id: string) => request<void>(`/videos/${id}`, { method: "DELETE" }),
 

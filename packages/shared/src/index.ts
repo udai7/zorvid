@@ -36,6 +36,9 @@ export interface User {
   id: string;
   email: string;
   passwordHash: string;
+  firstName: string | null;
+  lastName: string | null;
+  phone: string | null;
   createdAt: string;
 }
 

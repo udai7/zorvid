@@ -32,12 +32,31 @@ export async function teardown(app: FastifyInstance): Promise<void> {
 export const uniqueEmail = (): string =>
   `t_${Date.now()}_${Math.random().toString(36).slice(2)}@test.com`;
 
-/** Register a fresh user and return their bearer token. */
+/** A complete registration payload; override fields as needed. */
+export const registerPayload = (over: Record<string, unknown> = {}) => ({
+  email: uniqueEmail(),
+  password: "password123",
+  firstName: "Test",
+  lastName: "User",
+  phone: "+1 555 0100",
+  ...over,
+});
+
+/**
+ * Register a fresh user and return their bearer token, completing the email
+ * OTP challenge when 2FA is enabled (the dev code is returned by the API when
+ * SMTP is unconfigured, as it is in tests).
+ */
 export async function registerUser(app: FastifyInstance): Promise<string> {
-  const res = await app.inject({
+  const payload = registerPayload();
+  const reg = await app.inject({ method: "POST", url: "/api/auth/register", payload });
+  const body = reg.json();
+  if (body.token) return body.token as string; // 2FA disabled
+
+  const ver = await app.inject({
     method: "POST",
-    url: "/api/auth/register",
-    payload: { email: uniqueEmail(), password: "password123" },
+    url: "/api/auth/verify-otp",
+    payload: { email: payload.email, code: body.devCode, purpose: "register" },
   });
-  return res.json().token as string;
+  return ver.json().token as string;
 }
