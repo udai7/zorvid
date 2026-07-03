@@ -23,7 +23,7 @@ export function Docs() {
       <PageHero
         eyebrowLeft="DEVELOPER"
         eyebrowRight="DOCS"
-        title="Get Vodeum running in minutes."
+        title="Get Zorvid running in minutes."
         intro="Everything is configured through environment variables and one Docker Compose file. The full reference lives in the repository — here is the short path."
       >
         <div className="mt-8 flex flex-wrap gap-3">

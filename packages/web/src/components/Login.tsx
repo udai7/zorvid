@@ -60,7 +60,7 @@ export function Login() {
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] as const }}
-        className="relative flex w-full max-w-[400px] flex-col gap-3.5 overflow-hidden rounded-[10px] border border-line bg-white p-6 shadow-sm"
+        className="relative flex w-full max-w-[400px] flex-col gap-3 overflow-hidden rounded-[10px] border border-line bg-white p-5 shadow-sm"
       >
         {pending ? (
           <OtpForm
@@ -71,13 +71,13 @@ export function Login() {
             onBack={() => setPending(null)}
           />
         ) : (
-          <form onSubmit={submit} className="flex flex-col gap-3.5">
-            <Link to="/" className="self-start text-sm text-muted transition-colors hover:text-ink">
+          <form onSubmit={submit} className="flex flex-col gap-3">
+            <Link to="/" className="self-start text-xs text-muted transition-colors hover:text-ink">
               ← back
             </Link>
-            <span className="font-mono text-xs uppercase tracking-[0.08em] text-muted">[ <span className="text-ink">SIGN IN</span> ]</span>
-            <Brand className="text-[1.35rem]" />
-            <p className="-mt-1 text-sm text-muted">Welcome back. Sign in to upload and stream videos.</p>
+            <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted">[ <span className="text-ink">SIGN IN</span> ]</span>
+            <Brand className="text-xl" />
+            <p className="-mt-1 text-xs text-muted">Welcome back. Sign in to upload and stream videos.</p>
 
             <input
               type="email"
@@ -93,12 +93,12 @@ export function Login() {
             <button type="submit" disabled={busy} className={cn(btn.primary, "mt-1")}>
               {busy ? "Signing in…" : "Log in"}
             </button>
-            {error && <p className="text-sm text-err">{error}</p>}
+            {error && <p className="text-xs text-err">{error}</p>}
 
             <GoogleButton onCredential={onGoogle} onError={setError} />
 
-            <p className="mt-1 text-center text-sm text-muted">
-              New to Vodeum?{" "}
+            <p className="mt-1 text-center text-xs text-muted">
+              New to Zorvid?{" "}
               <Link to="/register" className="font-medium text-ink hover:underline">
                 Create an account
               </Link>

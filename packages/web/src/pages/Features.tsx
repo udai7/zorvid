@@ -37,7 +37,7 @@ export function Features() {
         eyebrowLeft="PRODUCT"
         eyebrowRight="FEATURES"
         title="Everything you need to ship video."
-        intro="Vodeum is a complete, self-hosted path from a raw upload to an adaptive stream — transcoding, packaging, storage and delivery, all on infrastructure you own."
+        intro="Zorvid is a complete, self-hosted path from a raw upload to an adaptive stream — transcoding, packaging, storage and delivery, all on infrastructure you own."
       >
         <div className="mt-8 flex flex-wrap gap-3">
           <Link to="/register" className={cn(btn.primary, "glare-effect")}>Get started →</Link>

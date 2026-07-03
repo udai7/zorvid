@@ -1,5 +1,6 @@
 // Sane defaults so tests run against local containers (or CI services) without
 // requiring a .env. Real values (set by CI or the shell) always win.
+process.env.NODE_ENV ||= "test"; // disables rate limiting so tests can hammer auth
 process.env.JWT_SECRET ||= "test-secret-please-ignore-0123456789";
 process.env.DATABASE_URL ||= "postgres://vp:secret@localhost:5432/video_processing";
 process.env.REDIS_URL ||= "redis://localhost:6379";

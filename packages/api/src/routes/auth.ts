@@ -44,6 +44,10 @@ const twoFactorEnabled = process.env.TWO_FACTOR_ENABLED !== "false";
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClient = googleClientId ? new OAuth2Client(googleClientId) : null;
 
+/** Per-route rate limits for the sensitive auth endpoints (ignored under test,
+ * where the rate-limit plugin isn't registered). Keyed by client IP. */
+const limit = (max: number) => ({ config: { rateLimit: { max, timeWindow: "1 minute" } } });
+
 /** Auth routes, mounted under /api/auth. */
 export async function authRoutes(app: FastifyInstance) {
   /** Issue + deliver an OTP, returning the dev code only when SMTP is unconfigured. */
@@ -68,7 +72,7 @@ export async function authRoutes(app: FastifyInstance) {
   }));
 
   // POST /api/auth/register — validate, create user, then start a 2FA challenge.
-  app.post("/register", async (req, reply) => {
+  app.post("/register", limit(5), async (req, reply) => {
     const body = (req.body ?? {}) as Partial<RegisterBody>;
     const email = body.email?.trim().toLowerCase();
     const firstName = body.firstName?.trim();
@@ -112,7 +116,7 @@ export async function authRoutes(app: FastifyInstance) {
   });
 
   // POST /api/auth/login — verify password, then start a 2FA challenge.
-  app.post("/login", async (req, reply) => {
+  app.post("/login", limit(10), async (req, reply) => {
     const body = (req.body ?? {}) as Partial<RegisterBody>;
     const email = body.email?.trim().toLowerCase();
     const { password } = body;
@@ -138,7 +142,7 @@ export async function authRoutes(app: FastifyInstance) {
   });
 
   // POST /api/auth/verify-otp — exchange a valid code for a token.
-  app.post("/verify-otp", async (req, reply) => {
+  app.post("/verify-otp", limit(10), async (req, reply) => {
     const { email, code, purpose } = (req.body ?? {}) as {
       email?: string;
       code?: string;
@@ -168,7 +172,7 @@ export async function authRoutes(app: FastifyInstance) {
   });
 
   // POST /api/auth/resend-otp — re-issue a code for an in-flight challenge.
-  app.post("/resend-otp", async (req, reply) => {
+  app.post("/resend-otp", limit(3), async (req, reply) => {
     const { email, purpose } = (req.body ?? {}) as { email?: string; purpose?: OtpPurpose };
     if (!email || (purpose !== "register" && purpose !== "login")) {
       return reply.code(400).send({ error: "email and purpose are required" });
@@ -184,7 +188,7 @@ export async function authRoutes(app: FastifyInstance) {
   });
 
   // POST /api/auth/google — verify a Google ID token and sign in (no 2FA needed).
-  app.post("/google", async (req, reply) => {
+  app.post("/google", limit(10), async (req, reply) => {
     if (!googleClient || !googleClientId) {
       return reply.code(503).send({ error: "google sign-in is not configured" });
     }

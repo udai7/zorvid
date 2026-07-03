@@ -1,6 +1,7 @@
 {
   "name": "@vp/api",
   "version": "0.1.0",
+  "license": "MIT",
   "type": "module",
   "main": "dist/server.js",
   "scripts": {
@@ -16,6 +17,7 @@
     "@aws-sdk/lib-storage": "^3.658.0",
     "@fastify/jwt": "^9.0.1",
     "@fastify/multipart": "^9.0.1",
+    "@fastify/rate-limit": "^11.1.0",
     "@vp/shared": "*",
     "argon2": "^0.41.1",
     "bullmq": "^5.21.0",

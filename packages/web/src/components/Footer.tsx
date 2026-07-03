@@ -71,7 +71,7 @@ export function Footer() {
         </div>
       </footer>
       <div className="mx-auto flex w-full max-w-[1280px] flex-wrap justify-between gap-2 border-x border-t border-line px-6 py-5 text-[0.82rem] text-muted">
-        <span>© {new Date().getFullYear()} Vodeum. MIT Licensed.</span>
+        <span>© {new Date().getFullYear()} Zorvid. MIT Licensed.</span>
         <span>Built by Archilect Studios</span>
       </div>
     </>

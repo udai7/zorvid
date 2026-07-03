@@ -55,3 +55,11 @@ export async function verifyOtp(userId: string, purpose: OtpPurpose, code: strin
   await pool.query("UPDATE email_otps SET consumed_at = now() WHERE id = $1", [otp.id]);
   return true;
 }
+
+/** Delete OTP rows that are consumed or expired so the table doesn't grow unbounded. */
+export async function cleanupExpiredOtps(): Promise<number> {
+  const { rowCount } = await pool.query(
+    "DELETE FROM email_otps WHERE consumed_at IS NOT NULL OR expires_at < now()"
+  );
+  return rowCount ?? 0;
+}

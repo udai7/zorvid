@@ -36,7 +36,7 @@ function LegalPage({
             </div>
           ))}
           <p className="border-t border-line pt-6 text-[0.85rem] text-muted">
-            Vodeum is open-source software provided under the MIT license. When you self-host it, you are the data
+            Zorvid is open-source software provided under the MIT license. When you self-host it, you are the data
             controller for everything it stores. This document describes the reference deployment and is provided as a
             starting point — adapt it to your own jurisdiction and obligations.
           </p>
@@ -51,12 +51,12 @@ export function Privacy() {
     <LegalPage
       eyebrowLeft="PRIVACY"
       title="Your data stays yours."
-      intro="Vodeum is self-hosted, so your videos, accounts and logs live entirely on infrastructure you control. We never see them."
+      intro="Zorvid is self-hosted, so your videos, accounts and logs live entirely on infrastructure you control. We never see them."
       updated="June 2026"
       sections={[
         {
           heading: "What is stored",
-          body: "A Vodeum instance stores the account details you provide (such as your email and credentials), the videos you upload, the renditions generated from them, and processing logs needed to run the pipeline. Passwords are hashed with Argon2 and never stored in plain text.",
+          body: "A Zorvid instance stores the account details you provide (such as your email and credentials), the videos you upload, the renditions generated from them, and processing logs needed to run the pipeline. Passwords are hashed with Argon2 and never stored in plain text.",
         },
         {
           heading: "Where it is stored",
@@ -84,12 +84,12 @@ export function Terms() {
     <LegalPage
       eyebrowLeft="TERMS"
       title="Terms of service."
-      intro="These terms cover use of the Vodeum reference deployment. The software itself is licensed separately under the MIT license."
+      intro="These terms cover use of the Zorvid reference deployment. The software itself is licensed separately under the MIT license."
       updated="June 2026"
       sections={[
         {
           heading: "Acceptable use",
-          body: "Use Vodeum to process and stream content you own or are authorized to distribute. Do not use an instance to host unlawful material or to infringe the rights of others. Operators may set additional rules for their own deployments.",
+          body: "Use Zorvid to process and stream content you own or are authorized to distribute. Do not use an instance to host unlawful material or to infringe the rights of others. Operators may set additional rules for their own deployments.",
         },
         {
           heading: "Accounts",

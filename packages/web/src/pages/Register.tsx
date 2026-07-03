@@ -79,7 +79,7 @@ export function Register() {
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] as const }}
-        className="relative flex w-full max-w-[420px] flex-col gap-3.5 overflow-hidden rounded-[10px] border border-line bg-white p-6 shadow-sm"
+        className="relative flex w-full max-w-[420px] flex-col gap-3 overflow-hidden rounded-[10px] border border-line bg-white p-5 shadow-sm"
       >
         {pending ? (
           <OtpForm
@@ -90,13 +90,13 @@ export function Register() {
             onBack={() => setPending(null)}
           />
         ) : (
-          <form onSubmit={submit} className="flex flex-col gap-3.5">
-            <Link to="/" className="self-start text-sm text-muted transition-colors hover:text-ink">
+          <form onSubmit={submit} className="flex flex-col gap-3">
+            <Link to="/" className="self-start text-xs text-muted transition-colors hover:text-ink">
               ← back
             </Link>
-            <span className="font-mono text-xs uppercase tracking-[0.08em] text-muted">[ <span className="text-ink">CREATE ACCOUNT</span> ]</span>
-            <Brand className="text-[1.35rem]" />
-            <p className="-mt-1 text-sm text-muted">Set up your Vodeum account to start uploading and streaming.</p>
+            <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted">[ <span className="text-ink">CREATE ACCOUNT</span> ]</span>
+            <Brand className="text-xl" />
+            <p className="-mt-1 text-xs text-muted">Set up your Zorvid account to start uploading and streaming.</p>
 
             <div className="grid grid-cols-2 gap-3">
               <input
@@ -139,7 +139,7 @@ export function Register() {
             <PasswordField value={password} onChange={setPassword} placeholder="password (min 8 chars)" autoComplete="new-password" minLength={8} />
             <PasswordField value={confirm} onChange={setConfirm} placeholder="confirm password" autoComplete="new-password" minLength={8} />
 
-            <label className="flex items-start gap-2.5 text-sm text-muted">
+            <label className="flex items-start gap-2.5 text-xs text-muted">
               <input
                 type="checkbox"
                 checked={accepted}
@@ -156,11 +156,11 @@ export function Register() {
             <button type="submit" disabled={busy} className={cn(btn.primary, "mt-1")}>
               {busy ? "Creating account…" : "Create account"}
             </button>
-            {error && <p className="text-sm text-err">{error}</p>}
+            {error && <p className="text-xs text-err">{error}</p>}
 
             <GoogleButton onCredential={onGoogle} onError={setError} />
 
-            <p className="mt-1 text-center text-sm text-muted">
+            <p className="mt-1 text-center text-xs text-muted">
               Already have an account?{" "}
               <Link to="/login" className="font-medium text-ink hover:underline">
                 Sign in

@@ -1,10 +1,12 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import fastifyMultipart from "@fastify/multipart";
+import fastifyRateLimit from "@fastify/rate-limit";
 import { registerAuth } from "./auth/jwt.js";
 import { authRoutes } from "./routes/auth.js";
 import { videoRoutes } from "./routes/videos.js";
 import { streamRoutes } from "./routes/streams.js";
 import { ensureBuckets } from "./storage/s3.js";
+import { cleanupExpiredOtps } from "./auth/otp.js";
 
 const port = Number(process.env.API_PORT ?? 3000);
 
@@ -13,7 +15,15 @@ const port = Number(process.env.API_PORT ?? 3000);
  * drive it via `app.inject(...)`; `start()` adds the network listener.
  */
 export async function buildApp(opts: { logger?: boolean } = {}): Promise<FastifyInstance> {
-  const app = Fastify({ logger: opts.logger ?? true });
+  // trustProxy so rate-limiting keys on the real client IP (nginx sets
+  // X-Forwarded-For), not the gateway's address.
+  const app = Fastify({ logger: opts.logger ?? true, trustProxy: true });
+
+  // Global rate limit (generous default). Sensitive auth routes tighten this
+  // per-route via `config.rateLimit`. Skipped entirely under test.
+  if (process.env.NODE_ENV !== "test") {
+    await app.register(fastifyRateLimit, { max: 300, timeWindow: "1 minute" });
+  }
 
   // JWT plugin + `authenticate` preHandler (awaited so routes inherit them).
   await registerAuth(app);
@@ -44,6 +54,16 @@ export async function buildApp(opts: { logger?: boolean } = {}): Promise<Fastify
 
 async function start() {
   const app = await buildApp();
+
+  // Periodically purge consumed/expired OTP rows (hourly). unref so it never
+  // holds the process open on its own.
+  const otpSweep = setInterval(() => {
+    cleanupExpiredOtps()
+      .then((n) => n && app.log.info(`cleaned up ${n} expired OTP row(s)`))
+      .catch((err) => app.log.warn({ err }, "OTP cleanup failed"));
+  }, 3_600_000);
+  otpSweep.unref();
+
   await app.listen({ port, host: "0.0.0.0" });
 }
 

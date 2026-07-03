@@ -19,7 +19,7 @@ export function HowItWorks() {
         eyebrowLeft="SYSTEM"
         eyebrowRight="WORKFLOW"
         title="From raw upload to adaptive stream."
-        intro="Vodeum is a decoupled pipeline: the API stays responsive while a pool of workers does the heavy lifting. Here is the journey every video takes."
+        intro="Zorvid is a decoupled pipeline: the API stays responsive while a pool of workers does the heavy lifting. Here is the journey every video takes."
       >
         <div className="mt-8 flex flex-wrap gap-3">
           <Link to="/register" className={btn.primary}>Try the pipeline →</Link>

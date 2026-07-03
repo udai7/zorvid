@@ -178,8 +178,8 @@ function TechCell({ name, icon, usecase, i }: TechCellProps) {
 
 const FAQ_DATA = [
   {
-    question: "What is Vodeum?",
-    answer: "Vodeum is an open-source, self-hosted video-on-demand processing pipeline. It allows you to transcode, package, and serve adaptive streamable videos using your own storage and compute infrastructure."
+    question: "What is Zorvid?",
+    answer: "Zorvid is an open-source, self-hosted video-on-demand processing pipeline. It allows you to transcode, package, and serve adaptive streamable videos using your own storage and compute infrastructure."
   },
   {
     question: "How does self-hosting save costs?",
@@ -289,7 +289,7 @@ export function Landing() {
             [ <span className="text-brand">OPEN SOURCE</span> · SELF-HOSTED VIDEO ]
           </motion.span>
           <motion.h1 variants={fade} custom={1} initial="hidden" animate="show" className="mt-6 max-w-[24ch] text-[clamp(2.4rem,6.2vw,4.1rem)] font-[650] leading-[1.04] tracking-[-0.02em]">
-            The open-source Vodeum platform for developers.
+            The open-source Zorvid platform for developers.
           </motion.h1>
           <motion.p variants={fade} custom={2} initial="hidden" animate="show" className="mt-6 max-w-[85ch] text-[1.05rem] text-ink-2">
             Upload once and stream everywhere with self-hosted video transcoding and adaptive HLS.
@@ -339,7 +339,7 @@ export function Landing() {
               <div>
                 <span className="font-mono text-xs uppercase tracking-[0.08em] text-muted">[ <span className="text-brand">SYSTEM</span> · <span className="text-ink">ARCHITECTURE</span> ]</span>
                 <h2 className="mt-3 text-[clamp(1.8rem,4vw,2.5rem)] font-semibold tracking-[-0.03em] leading-[1.1] text-ink">
-                  Horizontally Scalable<br />Vodeum Processing Stack
+                  Horizontally Scalable<br />Zorvid Processing Stack
                 </h2>
               </div>
               <p className="text-[0.98rem] text-muted md:max-w-[42ch]">
@@ -527,7 +527,7 @@ export function Landing() {
                     Convert raw uploads into HLS. Enjoy adaptive, butter-smooth video delivery across mobile, web, and desktop.
                   </p>
                   <a href="#features" className="inline-flex items-center text-sm font-semibold text-ink hover:underline">
-                    Vodeum features <span className="ml-1">→</span>
+                    Zorvid features <span className="ml-1">→</span>
                   </a>
                 </div>
               </motion.div>
