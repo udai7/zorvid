@@ -2,6 +2,7 @@
   "name": "video-processing",
   "private": true,
   "version": "0.1.0",
+  "license": "MIT",
   "description": "Self-hosted scalable VOD pipeline (upload -> transcode -> adaptive HLS streaming)",
   "workspaces": [
     "packages/shared",

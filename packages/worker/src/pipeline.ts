@@ -9,8 +9,12 @@ import {
   updateJob,
   appendLog,
   setError,
+  userDurationSeconds,
 } from "./db.js";
-import { BUCKETS, downloadTo, inputKey } from "./storage.js";
+import { BUCKETS, downloadTo, deletePrefix, inputKey } from "./storage.js";
+
+// Per-user total upload budget in seconds (default 10 minutes).
+const MAX_USER_SECONDS = Number(process.env.MAX_VIDEO_SECONDS_PER_USER ?? 600);
 import { probe } from "./ffmpeg/probe.js";
 import { selectRenditions } from "./renditions.js";
 import { transcode } from "./stages/transcode.js";
@@ -54,6 +58,21 @@ export async function processVideo(videoId: string): Promise<void> {
     const meta = await probe(source);
     await setMetadata(videoId, meta);
     await appendLog(videoId, `[analyze] ${meta.width ?? "?"}x${meta.height} ${meta.duration}s\n`);
+
+    // Enforce the per-user upload budget now that we know this video's duration.
+    // Over-budget uploads are failed and their source deleted — no retry.
+    const used = await userDurationSeconds(video.user_id, videoId);
+    if (used + meta.duration > MAX_USER_SECONDS) {
+      const limitMin = Math.round(MAX_USER_SECONDS / 60);
+      const msg =
+        `Upload rejected: this ${Math.round(meta.duration)}s video would exceed your ` +
+        `${limitMin}-minute total upload limit (${Math.round(used)}s already used).`;
+      await setStatus(videoId, "failed");
+      await setError(videoId, msg);
+      await deletePrefix(BUCKETS.inputs, `${videoId}/`).catch(() => {});
+      await appendLog(videoId, `[analyze] ${msg}\n`);
+      return; // nothing to retry
+    }
     report(5);
 
     const renditions = selectRenditions(meta.height);

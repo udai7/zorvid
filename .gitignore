@@ -4,3 +4,6 @@ dist/
 *.log
 storage/
 tmp/
+
+# Personal study notes
+docs/STUDY_GUIDE.md

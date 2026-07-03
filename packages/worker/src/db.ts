@@ -4,12 +4,43 @@ import type { JobStage, VideoStatus, VideoMetadata } from "@vp/shared";
 if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is not set");
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
-export async function getVideo(id: string): Promise<{ original_filename: string } | undefined> {
-  const { rows } = await pool.query<{ original_filename: string }>(
-    "SELECT original_filename FROM videos WHERE id = $1",
+export async function getVideo(
+  id: string
+): Promise<{ original_filename: string; user_id: string } | undefined> {
+  const { rows } = await pool.query<{ original_filename: string; user_id: string }>(
+    "SELECT original_filename, user_id FROM videos WHERE id = $1",
     [id]
   );
   return rows[0];
+}
+
+/**
+ * Total seconds of successfully-processed video a user already has, excluding
+ * one video (the one being processed). Failed videos don't count against the
+ * budget. Used to enforce the per-user upload limit.
+ */
+export async function userDurationSeconds(userId: string, excludeVideoId: string): Promise<number> {
+  const { rows } = await pool.query<{ total: string }>(
+    `SELECT COALESCE(SUM((metadata->>'duration')::float), 0) AS total
+       FROM videos
+      WHERE user_id = $1 AND id <> $2 AND status <> 'failed'`,
+    [userId, excludeVideoId]
+  );
+  return Number(rows[0]?.total ?? 0);
+}
+
+/** IDs of videos older than `days`, for the retention reaper. */
+export async function expiredVideoIds(days: number): Promise<string[]> {
+  const { rows } = await pool.query<{ id: string }>(
+    `SELECT id FROM videos WHERE created_at < now() - ($1 || ' days')::interval`,
+    [String(days)]
+  );
+  return rows.map((r) => r.id);
+}
+
+/** Delete a video row (jobs cascade). Storage is cleared separately. */
+export async function deleteVideoRow(id: string): Promise<void> {
+  await pool.query("DELETE FROM videos WHERE id = $1", [id]);
 }
 
 export async function setStatus(videoId: string, status: VideoStatus): Promise<void> {

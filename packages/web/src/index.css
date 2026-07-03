@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@100..900&family=Geist:wght@100..900&display=swap');
+
+/* ---- Design tokens (Medusa-inspired light theme) ---- */
+@theme {
+  --color-ink: #0a0a0a;
+  --color-ink-2: #3f3f46;
+  --color-muted: #71717a;
+  --color-line: #e7e7e9;
+  --color-line-strong: #d4d4d8;
+  --color-paper: #ffffff;
+  --color-subtle: #fafafa;
+  --color-sunken: #f4f4f5;
+  --color-brand: #2563eb;
+  --color-brand-soft: #eff4ff;
+  --color-ok: #16a34a;
+  --color-ok-soft: #ecfdf3;
+  --color-err: #dc2626;
+  --color-err-soft: #fef2f2;
+
+  --font-sans: "Geist", Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+}
+
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Progress-bar motion that's awkward to express as utilities */
+@keyframes sheen { to { background-position: -200% 0; } }
+@keyframes indeterminate { 0% { transform: translateX(-120%); } 100% { transform: translateX(320%); } }
+.bar-sheen {
+  background-image: linear-gradient(100deg, transparent 20%, rgba(255,255,255,0.55) 50%, transparent 80%);
+  background-color: var(--color-brand);
+  background-size: 200% 100%;
+  animation: sheen 1.2s linear infinite;
+}
+.bar-indeterminate { width: 40%; animation: indeterminate 1.1s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bar-sheen, .bar-indeterminate { animation: none; }
+  .bar-indeterminate { width: 100%; }
+}
+
+/* Glare effect for buttons */
+.glare-effect {
+  position: relative;
+  overflow: hidden;
+}
+.glare-effect::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -150%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.28) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: skewX(-20deg);
+  pointer-events: none;
+}
+.glare-effect:hover::after {
+  left: 150%;
+  transition: left 0.75s ease-in-out;
+}

@@ -36,39 +36,87 @@ own host without a rewrite.
 
 ## 3. System diagram
 
+### Components & data flow
+
+```mermaid
+flowchart TB
+    subgraph client["Client"]
+        B["Browser<br/>React SPA + hls.js"]
+    end
+
+    subgraph edge["Edge"]
+        CF["Cloudflare CDN<br/>caches public HLS · free TLS"]
+    end
+
+    subgraph gateway["Gateway"]
+        NG["nginx<br/>serves SPA · proxies /api · caches public HLS"]
+    end
+
+    subgraph app["Application (stateless · scalable)"]
+        API["API — Fastify (TS)<br/>auth · upload · CRUD · enqueue · streaming"]
+        W["Worker pool — Node + FFmpeg<br/>N replicas, queue-driven"]
+    end
+
+    subgraph data["State & object storage"]
+        RQ[("Redis + BullMQ<br/>durable job queue")]
+        PG[("PostgreSQL<br/>users · videos · jobs")]
+        S3[("MinIO (S3)<br/>inputs · outputs · thumbnails")]
+    end
+
+    B -->|HTTPS| CF --> NG
+    NG -->|"/api/*"| API
+    NG -->|"public /hls/* (cached)"| API
+
+    API -->|"enqueue { videoId }"| RQ
+    API <-->|"metadata · progress"| PG
+    API -->|"stream upload"| S3
+    API -->|"proxy HLS bytes"| S3
+
+    RQ -->|pull job| W
+    W <-->|"status · progress · logs"| PG
+    W -->|download source| S3
+    W -->|"upload HLS + thumbnails"| S3
 ```
-                         ┌──────────────────────────────────────────┐
-                         │              Cloudflare CDN               │  (free tier)
-                         │   caches HLS .m3u8 / .ts segments         │
-                         └───────────────────┬──────────────────────┘
-                                             │ TLS
-                                       ┌─────▼─────┐
-   Browser (dashboard +               │   nginx    │  reverse proxy + TLS termination
-   hls.js player)  ──────────────────▶│  (gateway) │
-                                       └──┬─────┬───┘
-                          /api/*  ........│     │........ /streams/*  (HLS files)
-                                          │     │
-                                   ┌──────▼──┐  │ presigned / proxied from MinIO
-                                   │ API svc │  │
-                                   │ Fastify │  │
-                                   │  (TS)   │  │
-                                   └─┬────┬──┘  │
-                        enqueue job  │    │ read/write metadata
-                                     │    │
-                              ┌──────▼─┐  └──────────┐
-                              │ Redis  │             │
-                              │ BullMQ │        ┌────▼─────┐
-                              └───┬────┘        │ Postgres │  users, videos, jobs, progress
-                                  │ pull job    └──────────┘
-                           ┌──────▼───────┐
-                           │ Worker pool  │  N transcode workers (Node + FFmpeg)
-                           │ (FFmpeg)     │
-                           └──────┬───────┘
-                                  │ upload outputs (HLS, thumbs)
-                            ┌─────▼─────┐
-                            │   MinIO   │  S3-compatible object storage
-                            │  buckets  │   inputs / outputs / thumbnails
-                            └───────────┘
+
+### Request lifecycle (upload → watch)
+
+```mermaid
+sequenceDiagram
+    actor U as Browser (SPA)
+    participant N as nginx
+    participant A as API
+    participant Q as Redis/BullMQ
+    participant W as Worker (FFmpeg)
+    participant DB as Postgres
+    participant S as MinIO
+
+    U->>N: POST /api/videos (multipart, JWT)
+    N->>A: proxy
+    A->>S: stream file → inputs/
+    A->>DB: insert video(pending) + job
+    A->>Q: enqueue { videoId }
+    A-->>U: 202 { id }
+
+    Q->>W: deliver job
+    W->>S: download source
+    loop analyze → transcode → thumbnails → package → finalize
+        W->>DB: update status + progress
+        W->>S: upload outputs/ + thumbnails/
+    end
+    W->>DB: status = completed
+
+    loop while processing
+        U->>A: GET /api/videos/:id (poll)
+        A-->>U: status + progress
+    end
+
+    U->>A: GET /api/videos/:id/stream
+    A-->>U: url (+ token if private)
+    U->>N: GET /hls/master.m3u8 + segments
+    Note over N: public → cached at edge<br/>private → token verified, no-store
+    N->>A: proxy (public served from cache on repeat)
+    A->>S: fetch HLS objects
+    A-->>U: adaptive HLS stream
 ```
 
 ---
@@ -95,8 +143,13 @@ own host without a rewrite.
 2. **Transcode** — a worker pulls the job, downloads the source to a temp dir, runs FFmpeg
    stages, uploads results to MinIO `outputs/`, updates `progress`/`status` per stage.
 3. **Status** — client polls `GET /api/videos/:id` (or SSE) for live progress.
-4. **Stream** — when `completed`, client gets the master playlist URL (signed + expiring for
-   private videos). hls.js fetches `.m3u8` + `.ts` through nginx → Cloudflare caches at edge.
+4. **Stream** — when `completed`, the client calls `GET /api/videos/:id/stream` to get the
+   playback URL. All HLS bytes are proxied through the API (`/api/videos/:id/hls/*`) from a
+   private outputs bucket: **public** videos are served anonymously with long-lived
+   `Cache-Control` (nginx/Cloudflare cache them at the edge); **private** videos require a
+   short-lived per-stream token that hls.js attaches to every request via `xhrSetup`, and are
+   served `no-store`. (Presigned MinIO URLs are intentionally avoided — hls.js resolves child
+   playlists/segments with relative URLs, which would drop the signature.)
 
 ### FFmpeg stages (per job)
 | # | Stage | Tool | Progress |
@@ -150,7 +203,8 @@ Progress for stage 2 is parsed live from FFmpeg stderr (`time=hh:mm:ss.xx` ÷ to
 
 - JWT access tokens; passwords hashed with argon2/bcrypt.
 - Per-user video ownership enforced in the API.
-- Private videos served via **signed, time-limited URLs** (presigned MinIO or short-lived tokens).
+- Private videos served via the API HLS proxy, gated by **short-lived, per-stream tokens**
+  (TTL = `SIGNED_URL_TTL`) attached to every request; private responses are `no-store`.
 - nginx terminates TLS; secrets injected via `.env` (never committed).
 
 ---
@@ -159,21 +213,24 @@ Progress for stage 2 is parsed live from FFmpeg stderr (`time=hh:mm:ss.xx` ÷ to
 
 ```
 video_processing/
-├─ docker-compose.yml        # nginx, api, worker, redis, postgres, minio
+├─ docker-compose.yml        # nginx, api, worker, migrate, redis, postgres, minio
 ├─ .env                      # secrets, bucket names, JWT secret, DB url
 ├─ nginx/nginx.conf
+├─ .github/workflows/ci.yml  # build + test + SPA build on push/PR
 ├─ packages/
 │  ├─ api/                   # Fastify app
 │  │  ├─ src/routes/         # auth, videos, streams
-│  │  ├─ src/auth/           # JWT, signed-URL helpers
+│  │  ├─ src/auth/           # JWT helpers
 │  │  ├─ src/storage/        # MinIO (S3) client wrapper
 │  │  ├─ src/db/             # Postgres client + migrations
-│  │  └─ src/queue/          # BullMQ producer
+│  │  ├─ src/queue/          # BullMQ producer
+│  │  └─ test/               # integration tests (app.inject)
 │  ├─ worker/                # BullMQ consumer
 │  │  ├─ src/stages/         # analyze, transcode, thumbnails, package
 │  │  └─ src/ffmpeg/         # subprocess wrapper + progress parser
-│  └─ shared/                # shared TS types (Video, Job, enums)
-└─ static/                   # dashboard: upload, progress cards, hls.js player
+│  ├─ shared/                # shared TS types (Video, Job, enums)
+│  └─ web/                   # React + Vite SPA (auth, upload, progress, hls.js player)
+└─ docs/                     # architecture.md, steps.md
 ```
 
 Run the whole stack on the VPS with: `docker compose up -d`.

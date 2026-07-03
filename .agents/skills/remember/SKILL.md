@@ -80,14 +80,14 @@ Before writing `memory.md`, run a final pass over the content to ensure no sensi
 
 ### Where to save
 
-Write the memory to `memory.md` in the project root. This file always contains only the most recent session state.
+Write the memory to `docs/memory.md`. This file always contains only the most recent session state.
 
-If `memory.md` already exists, show the developer a brief summary of what is currently saved and ask for confirmation before overwriting:
+If `docs/memory.md` already exists, show the developer a brief summary of what is currently saved and ask for confirmation before overwriting:
 
-Step 1 — Read `memory.md`, provide the one-line summary, and stop to wait for developer input:
+Step 1 — Read `docs/memory.md`, provide the one-line summary, and stop to wait for developer input:
 
 ```
-memory.md already exists from a previous session.
+docs/memory.md already exists from a previous session.
 Current memory covers: [one-line summary of existing content].
 
 Overwrite with this session's memory? (yes / no)
@@ -95,11 +95,11 @@ Overwrite with this session's memory? (yes / no)
 
 Step 2 — After the developer responds:
 
-- If they say **yes**, write the new `memory.md`.
+- If they say **yes**, write the new `docs/memory.md`.
 - If they say **no**, do not write anything and reply:
 
 ```
-No changes made. memory.md is unchanged.
+No changes made. docs/memory.md is unchanged.
 ```
 
 ### Format
@@ -137,7 +137,7 @@ Last updated: [date and time]
 After writing the file, confirm to the developer:
 
 ```
-Memory saved to memory.md.
+Memory saved to docs/memory.md.
 
 Next session: run /remember restore to pick up from here.
 ```
@@ -150,10 +150,10 @@ When the developer runs `/remember restore` at the start of a new session:
 
 ### Step 1 — Find the memory
 
-Look for `memory.md` in the project root. If it does not exist, tell the developer:
+Look for `docs/memory.md`. If it does not exist, tell the developer:
 
 ```
-No memory.md found in this project.
+No docs/memory.md found in this project.
 
 Either this is the first session, or the file was not saved.
 To save memory at the end of a session, run /remember save.
@@ -161,7 +161,7 @@ To save memory at the end of a session, run /remember save.
 
 ### Step 2 — Read everything available
 
-Read `memory.md` first. Then check for these specific context files if they exist and read only those:
+Read `docs/memory.md` first. Then check for these specific context files if they exist and read only those:
 
 - `CLAUDE.md`, `.claude/context.md` — Claude Code
 - `.github/copilot-instructions.md` — GitHub Copilot
@@ -195,10 +195,10 @@ Only after the developer confirms does the session continue.
 
 ### If memory is incomplete or unclear
 
-If `memory.md` exists but is missing important context, say so honestly:
+If `docs/memory.md` exists but is missing important context, say so honestly:
 
 ```
-I found memory.md but some context seems missing —
+I found docs/memory.md but some context seems missing —
 [what is unclear or absent].
 
 Should we continue with what we have, or do you want

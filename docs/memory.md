@@ -1,72 +1,166 @@
 # Memory — Video Processing Pipeline (VOD)
 
-Last updated: 2026-06-25
+Last updated: 2026-06-26
 
 Self-hosted video-on-demand platform: upload → transcode → adaptive HLS streaming.
-Full design in `architecture.md`; build broken into steps in `steps.md`.
-Stack: Node 20 + TypeScript, Fastify, BullMQ + Redis, FFmpeg, MinIO (S3), Postgres, nginx, hls.js.
+Full design in `docs/architecture.md`; build broken into steps in `docs/steps.md`; user-facing
+overview in root `README.md`; personal interview prep in `docs/STUDY_GUIDE.md` (GITIGNORED).
+Stack: Node 20 + TypeScript, Fastify, BullMQ + Redis, FFmpeg, MinIO (S3), Postgres, nginx,
+React + Vite + hls.js.
 npm workspaces monorepo: `packages/shared`, `packages/api`, `packages/worker`.
+`packages/web` (React SPA) is a STANDALONE package (NOT in root workspaces) so its frontend
+deps don't entangle the backend image installs. Web now uses **Tailwind v4 + Framer Motion +
+GSAP** (added 2026-06-26) — has its OWN `package-lock.json`; web Dockerfile does `npm install`
+(not `ci`), so updating `packages/web/package.json` is enough for the image build.
 
-## Progress: Steps 0–5 of 8 complete and verified
+## Progress: feature-complete (all 8 steps) + hardened + verified under docker compose
 
-- **Step 1 (infra scaffold)** — pre-existing before this session (docker-compose, Dockerfiles, package scaffolding, `.env.example`).
-- **Step 2 (shared types + DB schema)** — DONE this session.
-- **Step 3 (API auth)** — DONE this session.
-- **Step 4 (upload + enqueue)** — DONE this session.
-- **Step 5 (FFmpeg worker)** — DONE this session.
-- **Step 6 (streaming endpoints)** — NOT STARTED (next).
-- **Step 7 (dashboard)**, **Step 8 (CDN)** — not started.
+- **Steps 0–8** done (auth, upload+enqueue, FFmpeg worker, streaming, dashboard, CDN/caching).
+- Added: React UI, tests + CI, migrations-in-image fix, full Docker/compose hosting, README,
+  mermaid diagrams, doc updates.
+- **`docker compose up` now works end-to-end on this host** (was previously blocked — no Compose
+  CLI). Verified the full pipeline live, then torn down.
 
-## What was built (this session)
+### Git state
+- Branch **`feat/react-ui-tests-ci-hosting`** pushed to origin
+  (`udai7/video_processing_pipeline`), commit `93db232`. `main` is behind it.
+- **Uncommitted (2026-06-26 session): full UI redesign** — see below. Plus the earlier
+  README CI-badge fix and a small backend change (`videos.ts` list query). Not committed yet.
+- PR not opened yet.
 
-**Step 2 — `packages/shared/src/index.ts`**: `VideoStatus`, `Visibility`, `JobStage` unions; `User`/`Video`/`Job`/`VideoMetadata` interfaces; `TranscodeJobData` + `TRANSCODE_QUEUE = "transcode"` const.
-**Step 2 — DB**: `packages/api/src/db/pool.ts` (pg Pool from `DATABASE_URL`), `db/migrate.ts` (idempotent runner tracking applied files in `_migrations`, one txn per file), `db/migrations/001_init.sql` (users, videos, jobs per architecture §6 — uuid PKs via pgcrypto, enums `video_status`/`visibility`, jsonb metadata, FKs ON DELETE CASCADE, progress 0–100 check).
+## 2026-06-26 session — Medusa-style UI redesign (Tailwind + Framer + GSAP)
 
-**Step 3 — Auth**: `packages/api/src/auth/jwt.ts` (registers `@fastify/jwt`, decorates `authenticate` preHandler, types payload/user as `{id,email}`), `routes/auth.ts` (`POST /api/auth/register` argon2 hash + 409 on dup email; `POST /api/auth/login`; `GET /api/auth/me` protected), `src/server.ts` (Fastify entrypoint — was created here).
+User asked to (1) add a landing page w/ a sign-in button → auth → dashboard, (2) fix that the
+dashboard felt "stuck" during transcoding, then (3) restyle the WHOLE app to look like
+**medusajs.com** (clean, professional, light) — screenshots in `screenshot/` (gitignore these;
+don't commit). User explicitly chose "whole app → light Medusa style" and "use GSAP + Framer
+Motion + Tailwind".
 
-**Step 4 — Upload**: `packages/api/src/storage/s3.ts` (MinIO S3 client, `ensureBuckets`, `uploadStream` via `@aws-sdk/lib-storage` Upload for no-buffer streaming, `deletePrefix`, `inputKey`), `queue/producer.ts` (BullMQ `transcode` queue, `enqueueTranscode` with 3 attempts + exponential backoff), `routes/videos.ts` (`POST /` 202 stream-to-MinIO + rows + enqueue; `GET /` list; `GET /:id` detail w/ joined job progress; `DELETE /:id` rows + objects). Registered `@fastify/multipart` + best-effort `ensureBuckets` in server.ts. Added `@aws-sdk/lib-storage` dep to api package.json.
+**Root cause of "stuck" (the real fix, backend):** `GET /api/videos` (list) never joined the
+`jobs` table, so `progress`/`stage` were always undefined → bar stuck at 0%, substatus always
+"queued · 0%". Only the detail route (`GET /:id`) joined jobs. Fixed `packages/api/src/routes/
+videos.ts` list query to `LEFT JOIN jobs j ON j.video_id = v.id` and select `j.progress,
+j.stage, j.error_message` (mirrors the detail query; assumes ≤1 job/video). The dashboard polls
+the LIST, so this is what makes the bars actually move.
 
-**Step 5 — Worker** (`packages/worker/src/`): `storage.ts` (download/upload), `db.ts` (status/metadata/job/log helpers), `ffmpeg/run.ts` (spawn wrapper + `time=` progress parser), `ffmpeg/probe.ts` (ffprobe → metadata), `renditions.ts` (360/480/720 ladder, `selectRenditions` caps at source, `bitrateToBps`), `stages/{analyze→via pipeline,transcode,thumbnails,package,finalize}.ts`, `pipeline.ts` (orchestrates 5 stages, throttles progress to 1/percent, failure → status=failed + readable error then rethrow), `index.ts` (BullMQ Worker, concurrency from `WORKER_CONCURRENCY`).
+**Frontend (`packages/web`):**
+- **Stack added**: `tailwindcss` + `@tailwindcss/vite` (v4, CSS-first `@theme` in `index.css`,
+  NO tailwind.config.js), `framer-motion`, `gsap`. Vite plugin wired in `vite.config.ts`.
+- **Design system** = light "Medusa" look: white paper, hairline borders (`--color-line`),
+  near-black ink, `brand` blue accent, mono bracket eyebrows (`[ OPEN SOURCE ]`), solid-black
+  primary buttons / white-outline secondary. Theme tokens in `src/index.css` `@theme`. Shared
+  button class strings + `cn()` in `src/lib/ui.ts`.
+- **New `components/Landing.tsx`**: sticky nav (logo + GitHub link + black CTA), hero w/ staggered
+  Framer entrance, hairline-divided 4-col feature row, 5-stage pipeline diagram + dark code block,
+  CTA band, multi-column footer. Repo URL hardcoded `github.com/udai7/video_processing_pipeline`.
+- **GSAP** `src/hooks/useReveal.ts` — ScrollTrigger fade+rise on `[data-reveal]` els, `once:true`,
+  honors reduced-motion.
+- **Framer**: `App.tsx` uses `AnimatePresence mode="wait"` for Landing↔Auth↔Dashboard page
+  transitions; video cards use `layout` + scale in/out; Player modal scales in; buttons
+  `whileHover`/`whileTap`.
+- Restyled `Login` (light card + `←back` + onBack prop), `Dropzone`, `VideoCard`, `Player` to
+  Tailwind. **Kept the transcoding animations** (sheen bar / indeterminate bar / spinner badge /
+  humanized STAGE_LABELS) — now CSS classes `.bar-sheen` / `.bar-indeterminate` in index.css.
+- **GOTCHA**: Framer Motion v12 rejects `ease: [..]` typed as `number[]` — cubic-bezier tuples
+  MUST be `as const` (e.g. `ease: [0.22,1,0.36,1] as const`). Build failed until added everywhere.
 
-## Decisions made
+**Verified**: `npm run build` (tsc --noEmit + vite) passes; nginx rebuilt + serving new bundle
+(`docker compose up -d --build nginx` with `POSTGRES_HOST_PORT=55433 HTTP_HOST_PORT=8090`);
+list endpoint confirmed returning `progress`/`stage`. NOT visually verified in-browser — the
+Chrome extension was not connected this session. Bundle grew to ~933 KB (303 KB gzip) from
+gsap+framer; not code-split.
 
-- **Upload key convention**: `inputs/<videoId>/<original_filename>`. API writes it (`api/src/storage/s3.ts inputKey`), worker reconstructs the same (`worker/src/storage.ts inputKey`). Keep these in sync.
-- **Output layout**: `outputs/<videoId>/master.m3u8`, `outputs/<videoId>/<height>p/index.m3u8` + `seg_NNN.ts`; thumbnails `thumbnails/<videoId>/thumb_N.jpg`. `master_playlist_key = <videoId>/master.m3u8`.
-- **Transcode then stream-copy to HLS** (two passes: intermediate mp4 per rendition, then `-c copy` segmentation). Honors the doc's separate transcode/package stages; possible future one-pass optimization noted.
-- **Progress bands**: analyze→5, transcode 10–70, thumbnails 70–85, package 85–98, finalize 98–100.
-- **BullMQ**: jobs get 3 attempts + exponential backoff; worker connection needs `maxRetriesPerRequest: null`. Stages idempotent (deterministic keys overwrite).
-- `ensureBuckets` at API boot is best-effort (logs warning, doesn't block startup if MinIO down).
+## What was built / changed (this session)
 
-## Problems solved
+**React SPA — `packages/web/`** (Vite + React + TS, replaced the deleted `static/` dashboard):
+- `src/api.ts` typed client (JWT in localStorage; upload via XHR for progress; 401 auto-logout).
+- `src/types.ts` (local API response shapes). `src/hooks/useVideos.ts` (~1s polling while
+  anything non-terminal). `src/components/`: `Login`, `Dropzone` (drag-drop + upload %),
+  `VideoCard`, `Player` (hls.js modal, adaptive ABR + manual quality chips; private token via
+  `xhrSetup`). `src/index.css` dark theme. `vite.config.ts` proxies `/api`→:3000 in dev.
+- `packages/web/Dockerfile` multi-stage: builds SPA → serves via nginx + `nginx/nginx.conf`.
 
-- **Background server processes get reaped**: `nohup ... &` inside a tool call dies when the wrapper exits. Fix: run the server/worker in the FOREGROUND of a `run_in_background: true` Bash call (use `exec npx tsx <ABSOLUTE_PATH>`); a relative path makes tsx resolve against the wrong cwd (ERR_MODULE_NOT_FOUND on `/src/server.ts`).
-- **MinIO container shell is minimal** (busybox: no `find`/`grep`/`strings`/`sed`). To inspect stored objects, use the S3 API (a small node `.mjs` script using `@aws-sdk/client-s3` ListObjectsV2/GetObject) — and run it from the REPO ROOT so hoisted `node_modules` resolves (scripts in the scratchpad dir can't resolve deps).
-- `metadata` jsonb writes need `JSON.stringify` + `$2::jsonb` (pg doesn't auto-serialize objects).
+**Migrations-in-image fix (`packages/api`)**: build = `tsc && rm -rf dist/db/migrations &&
+cp -r src/db/migrations dist/db/migrations` (idempotent). Added `migrate:prod` + `test` scripts.
+Removed dead dep `@aws-sdk/s3-request-presigner`.
 
-## Current state — all of Steps 2–5 verified end-to-end
+**Tests + CI**: `server.ts` exports `buildApp({logger})` (no listen; auto-starts only when run
+directly). `packages/api/test/` — `helpers.ts`, `auth/videos/streams.test.ts` (streams test seeds
+a completed video + master.m3u8 in MinIO to test authz without the worker). Uses `node:test` +
+`tsx` (NOT vitest — avoids .js→.ts Vite resolver pain with NodeNext). 10 tests, all pass.
+`.github/workflows/ci.yml`: Postgres+Redis as services, MinIO via a `docker run` step (service
+containers can't pass `server /data`), then build → migrate → test → SPA build.
 
-Verified with real ffmpeg + throwaway Postgres/Redis/MinIO containers:
-- Auth: register/login/me return correct 201/200/401/409/404.
-- Upload: 202, object in MinIO inputs/, BullMQ job enqueued, videos(pending)+jobs rows; list/detail/delete work; delete cleans MinIO + DB.
-- Worker happy path: real 1280x720 8s clip → status walks pending→transcoding→thumbnails→completed, progress 0→100; produced 3 renditions + valid master playlist (correct BANDWIDTH/RESOLUTION) + 6 thumbnails; metadata + master_playlist_key persisted.
-- Worker failure path: corrupt file → status=failed, readable ffprobe error, 3 BullMQ retries then gives up.
-- All verification containers/processes were torn down at end of session.
+**Compose / hosting (`docker-compose.yml`)**:
+- One-shot `migrate` service; `api` depends on it `service_completed_successfully`.
+- `nginx` BUILDS from `packages/web/Dockerfile` (bundles the React build).
+- `createbuckets` no longer sets `outputs` anonymous (outputs is private; thumbs still anon).
+- **Published host ports are env-overridable** (`HTTP_HOST_PORT`, `POSTGRES_HOST_PORT`,
+  `REDIS_HOST_PORT`, `MINIO_API_HOST_PORT`, `MINIO_CONSOLE_HOST_PORT`) with defaults; documented
+  in `.env.example`. Added `.dockerignore`.
 
-## Environment notes
+**Docs**: new root `README.md`; `docs/architecture.md` §3 now has **mermaid** component +
+sequence diagrams (replaced the stale ASCII one); §5/§8/§9 updated; `docs/steps.md` Steps
+2/6/7/8 updated to the React UI + API-proxy streaming model. `docs/STUDY_GUIDE.md` added
+(gitignored personal interview prep). The `remember` skill (`.agents/skills/remember/SKILL.md`,
+symlinked from `.claude/`) now saves/restores to **`docs/memory.md`** (was project root).
 
-- This machine has Docker (28.2.2) but **NO `docker compose` CLI** (no compose plugin, no `docker-compose` binary). All verification used direct `docker run` on alt ports: pg 55432, redis 56379, minio 59000. Install the Compose plugin before `docker compose up` works.
-- `ffmpeg`/`ffprobe` 6.1.1 ARE on the host PATH (used for local worker dev). Worker Docker image bundles ffmpeg via `apk add`.
-- `git` repo exists but state reported "not a git repository" by harness; only 1 commit (architecture + steps). No commits made for code yet — user has NOT asked to commit.
+## Key decisions (load-bearing)
 
-## Next session starts with
+- **Serve ALL HLS through the API proxy `/api/videos/:id/hls/*`, not presigned MinIO URLs** —
+  hls.js fetches nested playlists/segments via RELATIVE URLs → drops query-string signatures, so
+  presigning only loads the master. A header token re-applied per request via hls.js `xhrSetup`
+  works for nested HLS AND keeps private content genuinely private.
+- **outputs bucket is PRIVATE**; public delivery + CDN caching = nginx/Cloudflare caching the
+  API's PUBLIC proxy responses (`Cache-Control: public, immutable`); private = `no-store`.
+- Private stream token TTL = `SIGNED_URL_TTL`. `PATCH /:id` sets visibility.
+- nginx cache: `location ~ ^/api/videos/[^/]+/hls/` with `proxy_cache` + `X-Cache-Status`.
 
-**Step 6 — Streaming endpoints** (`packages/api/src/routes/streams.ts`):
-- `GET /api/videos/:id/stream` returns the master playlist URL. Public videos → public path through nginx/CDN; private videos → signed, time-limited URL (use `@aws-sdk/s3-request-presigner` — already a dep — or short-lived token; `SIGNED_URL_TTL` env exists).
-- nginx routes `/streams/*` → MinIO `outputs/` for segment serving (CDN-cacheable).
-- Verify: hls.js plays a completed video w/ adaptive switching; private URL expires after TTL; public plays without a token.
+## Problems solved (don't re-solve)
 
-## Open questions
+- **`docker compose` was unavailable** — installed the plugin to `~/.docker/cli-plugins/docker-compose`
+  (v5.2.0) via curl from GitHub releases, NO sudo. Persists for the user.
+- **Host port conflicts on THIS machine**: 5432 (a host Postgres) and 8080 (a Python app) are
+  taken; 6379/9000 free. Other Supabase stacks run on 543xx/553xx. Solution = env-overridable
+  ports (above). Demonstrated `up` with `POSTGRES_HOST_PORT=55433 HTTP_HOST_PORT=8090
+  MINIO_API_HOST_PORT=59000 MINIO_CONSOLE_HOST_PORT=59001 REDIS_HOST_PORT=56380`.
+- **Docker build caught a missing `@types/node` in `packages/web`** that local builds masked
+  (root node_modules hoisted it) — now in web devDeps; required for the isolated image build.
+- nginx `proxy_cache_path` is valid in `nginx/nginx.conf` because the file is `include`d inside
+  the main `http{}` block. Standalone `docker run` of the web image returns 000 unless the `api`
+  upstream host resolves (nginx resolves upstreams at startup) — fine under compose.
+- Dev gotchas: foreground servers in `run_in_background:true` with absolute `tsx` paths; ffmpeg
+  6.1.1 on host PATH; verify with direct `docker run` on alt ports if needed.
 
-- Migrations in the API runtime Docker image: `npm run migrate` uses `tsx` + `src/`, but the runtime image only ships `dist/` (no tsx, no `.sql`). Need a decision before deploy (compile the runner + copy `.sql` into image, or a dedicated migrate step). Not blocking local dev.
-- Corrupt-file `error_message` includes the temp source path — readable but could be mapped to a friendlier message if desired.
-- `visibility` defaults to `private`; there's no endpoint yet to set a video public — likely needed for Step 6 public-path testing (consider a PATCH or include in Step 6).
+## Current state — verified
+
+- Backend builds (shared/api/worker); web typechecks + Vite builds; `npm ci` lock consistent.
+- 10/10 API tests pass against real containers.
+- Compiled prod migration creates all tables on a fresh DB and is idempotent.
+- **Full `docker compose up -d --build` ran on this host**: all 7 services healthy, `migrate`
+  applied + exited, SPA served via nginx, and a real upload→transcode→3-rendition HLS→authorized
+  private stream all succeeded. Torn down with `docker compose down -v`.
+
+## Next session could start with
+
+0. **Visually verify the 2026-06-26 UI redesign in-browser** (extension was offline) — refresh
+   http://localhost:8090, check Landing → Sign in → Dashboard, hover/scroll animations, and a
+   real transcode showing the moving progress bar. Then commit the redesign (it's all uncommitted).
+1. Open the PR for `feat/react-ui-tests-ci-hosting` (CI will run on it); commit the pending
+   README badge fix first. NOTE: CI builds the web SPA — confirm Tailwind/Framer/GSAP build is
+   green there too. `screenshot/` should be gitignored, not committed.
+2. **Tier 2** (deferred to hosting phase, per user): SSE/WebSocket progress (replace polling),
+   Prometheus `/metrics` (queue depth, jobs, transcode duration), graceful worker shutdown +
+   readiness/liveness probes, **cache purge-on-revoke** (Cloudflare API on public→private flip),
+   rate limiting + request-schema validation.
+
+## Open questions / known caveats
+
+- **public→private revocation**: flipping a cached public video to private does NOT evict
+  already-cached copies for the TTL (inherent CDN property; confirmed). Fix = purge-on-revoke.
+  Current contract: set visibility before sharing.
+- `docs/memory.md` is TRACKED (not ignored) — it was pushed to the branch. Contains internal
+  session notes; user may want to gitignore/remove it from a public portfolio repo (flagged, not
+  yet actioned).
+- Thumbnails bucket still anonymous-read; corrupt-file `error_message` still includes the temp
+  source path (cosmetic).
