@@ -2,8 +2,9 @@ node_modules/
 dist/
 .env
 *.log
-storage/
-tmp/
+# Root-level runtime storage only — must NOT match packages/api/src/storage/
+/storage/
+/tmp/
 
 # Personal study notes
 docs/STUDY_GUIDE.md
