@@ -8,7 +8,7 @@ import { useAuth } from "../auth";
 export function Brand({ className }: { className?: string }) {
   return (
     <Link to="/" className={cn("flex items-center gap-2 text-[0.98rem] font-semibold text-ink", className)}>
-      <span className="inline-block h-4 w-4 rounded-full border-[3px] border-ink" /> {BRAND}
+      <img src="/zorvid.png" alt="Zorvid logo" className="h-5 w-5 rounded-[5px] object-contain" /> {BRAND}
     </Link>
   );
 }

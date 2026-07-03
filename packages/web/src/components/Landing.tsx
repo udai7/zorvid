@@ -289,7 +289,7 @@ export function Landing() {
             [ <span className="text-brand">OPEN SOURCE</span> · SELF-HOSTED VIDEO ]
           </motion.span>
           <motion.h1 variants={fade} custom={1} initial="hidden" animate="show" className="mt-6 max-w-[24ch] text-[clamp(2.4rem,6.2vw,4.1rem)] font-[650] leading-[1.04] tracking-[-0.02em]">
-            The open-source Zorvid platform for developers.
+            The open-source video pipeline for developers.
           </motion.h1>
           <motion.p variants={fade} custom={2} initial="hidden" animate="show" className="mt-6 max-w-[85ch] text-[1.05rem] text-ink-2">
             Upload once and stream everywhere with self-hosted video transcoding and adaptive HLS.
